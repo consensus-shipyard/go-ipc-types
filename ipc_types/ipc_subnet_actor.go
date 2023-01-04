@@ -2,8 +2,9 @@ package ipc_types
 
 import (
 	"github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
-	"math/big"
 )
 
 type IPCSubnetActorState struct { // TODO change name for IPCSubnetActorState once put in its own file
@@ -11,8 +12,8 @@ type IPCSubnetActorState struct { // TODO change name for IPCSubnetActorState on
 	ParentID          SubnetID
 	IpcGatewayAddr    address.Address
 	Consensus         ConsensusType
-	MinValidatorStake TokenAmount
-	TotalStake        TokenAmount
+	MinValidatorStake abi.TokenAmount
+	TotalStake        abi.TokenAmount
 	Stake             cid.Cid //TCid<THamt<Cid,TokenAmount>>
 	Status            Status
 	Genesis           []byte
@@ -22,6 +23,21 @@ type IPCSubnetActorState struct { // TODO change name for IPCSubnetActorState on
 	WindowChecks      cid.Cid //TCid<THamt<Cid, Votes>>,
 	ValidatorSet      []Validator
 	MinValidators     uint64
+}
+
+func (st *IPCSubnetActorState) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, error) {
+	tokenAmount, err := getOutOfHamt[abi.TokenAmount](st.Stake, s, abi.AddrKey(id))
+	return tokenAmount, err
+}
+
+func (st *IPCSubnetActorState) GetCheckpoint(s adt.Store, id address.Address) (Checkpoint, error) {
+	checkpoint, err := getOutOfHamt[Checkpoint](st.Stake, s, abi.AddrKey(id))
+	return checkpoint, err
+}
+
+func (st *IPCSubnetActorState) GetWindowCheck(s adt.Store, id address.Address) (Votes, error) {
+	votes, err := getOutOfHamt[Votes](st.Stake, s, abi.AddrKey(id))
+	return votes, err
 }
 
 type ConsensusType int64
@@ -34,10 +50,6 @@ const (
 	FilecoinEC
 	Dummy
 )
-
-type TokenAmount struct {
-	Atto big.Int
-}
 
 type Status int64
 
@@ -61,7 +73,7 @@ type ConstructParams struct {
 	Name              string
 	IpcGatewayAddr    uint64
 	Consensus         ConsensusType
-	MinValidatorStake TokenAmount
+	MinValidatorStake abi.TokenAmount
 	MinValidators     uint64
 	FinalityThreshold ChainEpoch
 	CheckPeriod       ChainEpoch
@@ -100,5 +112,5 @@ type CrossMsgMeta struct {
 	To      SubnetID
 	MsgsCID cid.Cid //TCid<TLink<CrossMsgs>>,
 	Nonce   uint64
-	Value   TokenAmount
+	Value   abi.TokenAmount
 }

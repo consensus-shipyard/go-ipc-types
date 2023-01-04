@@ -9,7 +9,6 @@ func main() {
 	if err := gen.WriteTupleEncodersToFile("./cbor_gen.go", "ipc_types",
 		ipc_types.IPCAddress{},
 		ipc_types.SubnetID{},
-		ipc_types.TokenAmount{},
 		ipc_types.IPCSubnetActorState{},
 		ipc_types.ConstructParams{},
 		ipc_types.JoinParams{},
@@ -27,6 +26,7 @@ func main() {
 		ipc_types.CrossMsgParams{},
 		ipc_types.ApplyMsgParams{},
 		ipc_types.CrossMsgs{},
+		ipc_types.Validator{},
 	); err != nil {
 		panic(err)
 	}

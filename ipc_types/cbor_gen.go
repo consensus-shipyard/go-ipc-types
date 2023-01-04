@@ -11,7 +11,6 @@ import (
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
-	big "math/big"
 )
 
 var _ = xerrors.Errorf
@@ -152,93 +151,6 @@ func (t *SubnetID) UnmarshalCBOR(r io.Reader) error {
 	return nil
 }
 
-var lengthBufTokenAmount = []byte{129}
-
-func (t *TokenAmount) MarshalCBOR(w io.Writer) error {
-	if t == nil {
-		_, err := w.Write(cbg.CborNull)
-		return err
-	}
-	if _, err := w.Write(lengthBufTokenAmount); err != nil {
-		return err
-	}
-
-	scratch := make([]byte, 9)
-
-	// t.Atto (big.Int) (struct)
-	{
-		if err := cbg.CborWriteHeader(w, cbg.MajTag, 2); err != nil {
-			return err
-		}
-		var b []byte
-		if t.Atto != nil {
-			b = t.Atto.Bytes()
-		}
-
-		if err := cbg.CborWriteHeader(w, cbg.MajByteString, uint64(len(b))); err != nil {
-			return err
-		}
-		if _, err := w.Write(b); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (t *TokenAmount) UnmarshalCBOR(r io.Reader) error {
-	*t = TokenAmount{}
-
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
-
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
-	if err != nil {
-		return err
-	}
-	if maj != cbg.MajArray {
-		return fmt.Errorf("cbor input should be of type array")
-	}
-
-	if extra != 1 {
-		return fmt.Errorf("cbor input had wrong number of fields")
-	}
-
-	// t.Atto (big.Int) (struct)
-
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	if err != nil {
-		return err
-	}
-
-	if maj != cbg.MajTag || extra != 2 {
-		return fmt.Errorf("big ints should be cbor bignums")
-	}
-
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
-	if err != nil {
-		return err
-	}
-
-	if maj != cbg.MajByteString {
-		return fmt.Errorf("big ints should be tagged cbor byte strings")
-	}
-
-	if extra > 256 {
-		return fmt.Errorf("t.Atto: cbor bignum was too large")
-	}
-
-	if extra > 0 {
-		buf := make([]byte, extra)
-		if _, err := io.ReadFull(br, buf); err != nil {
-			return err
-		}
-		t.Atto = big.NewInt(0).SetBytes(buf)
-	} else {
-		t.Atto = big.NewInt(0)
-	}
-	return nil
-}
-
 var lengthBufIPCSubnetActorState = []byte{143}
 
 func (t *IPCSubnetActorState) MarshalCBOR(w io.Writer) error {
@@ -285,12 +197,12 @@ func (t *IPCSubnetActorState) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.MinValidatorStake (ipc_types.TokenAmount) (struct)
+	// t.MinValidatorStake (big.Int) (struct)
 	if err := t.MinValidatorStake.MarshalCBOR(w); err != nil {
 		return err
 	}
 
-	// t.TotalStake (ipc_types.TokenAmount) (struct)
+	// t.TotalStake (big.Int) (struct)
 	if err := t.TotalStake.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -453,7 +365,7 @@ func (t *IPCSubnetActorState) UnmarshalCBOR(r io.Reader) error {
 
 		t.Consensus = ConsensusType(extraI)
 	}
-	// t.MinValidatorStake (ipc_types.TokenAmount) (struct)
+	// t.MinValidatorStake (big.Int) (struct)
 
 	{
 
@@ -462,7 +374,7 @@ func (t *IPCSubnetActorState) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.TotalStake (ipc_types.TokenAmount) (struct)
+	// t.TotalStake (big.Int) (struct)
 
 	{
 
@@ -696,7 +608,7 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.MinValidatorStake (ipc_types.TokenAmount) (struct)
+	// t.MinValidatorStake (big.Int) (struct)
 	if err := t.MinValidatorStake.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -820,7 +732,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) error {
 
 		t.Consensus = ConsensusType(extraI)
 	}
-	// t.MinValidatorStake (ipc_types.TokenAmount) (struct)
+	// t.MinValidatorStake (big.Int) (struct)
 
 	{
 
@@ -1466,7 +1378,7 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 	if err := t.Value.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -1535,7 +1447,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 		t.Nonce = uint64(extra)
 
 	}
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 
 	{
 
@@ -1571,7 +1483,7 @@ func (t *IPCGatewayState) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.MinStake (ipc_types.TokenAmount) (struct)
+	// t.MinStake (big.Int) (struct)
 	if err := t.MinStake.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -1679,7 +1591,7 @@ func (t *IPCGatewayState) UnmarshalCBOR(r io.Reader) error {
 		t.TotalSubnets = uint64(extra)
 
 	}
-	// t.MinStake (ipc_types.TokenAmount) (struct)
+	// t.MinStake (big.Int) (struct)
 
 	{
 
@@ -1948,7 +1860,7 @@ func (t *StorableMsg) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 	if err := t.Value.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -2021,7 +1933,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 
 	{
 
@@ -2198,7 +2110,7 @@ func (t *FundParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 	if err := t.Value.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -2223,7 +2135,7 @@ func (t *FundParams) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Value (ipc_types.TokenAmount) (struct)
+	// t.Value (big.Int) (struct)
 
 	{
 
@@ -2464,5 +2376,77 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
 		t.Metas[i] = v
 	}
 
+	return nil
+}
+
+var lengthBufValidator = []byte{130}
+
+func (t *Validator) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+	if _, err := w.Write(lengthBufValidator); err != nil {
+		return err
+	}
+
+	scratch := make([]byte, 9)
+
+	// t.Addr (address.Address) (struct)
+	if err := t.Addr.MarshalCBOR(w); err != nil {
+		return err
+	}
+
+	// t.NetAddr (string) (string)
+	if len(t.NetAddr) > cbg.MaxLength {
+		return xerrors.Errorf("Value in field t.NetAddr was too long")
+	}
+
+	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.NetAddr))); err != nil {
+		return err
+	}
+	if _, err := io.WriteString(w, string(t.NetAddr)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Validator) UnmarshalCBOR(r io.Reader) error {
+	*t = Validator{}
+
+	br := cbg.GetPeeker(r)
+	scratch := make([]byte, 8)
+
+	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 2 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.Addr (address.Address) (struct)
+
+	{
+
+		if err := t.Addr.UnmarshalCBOR(br); err != nil {
+			return xerrors.Errorf("unmarshaling t.Addr: %w", err)
+		}
+
+	}
+	// t.NetAddr (string) (string)
+
+	{
+		sval, err := cbg.ReadStringBuf(br, scratch)
+		if err != nil {
+			return err
+		}
+
+		t.NetAddr = string(sval)
+	}
 	return nil
 }
