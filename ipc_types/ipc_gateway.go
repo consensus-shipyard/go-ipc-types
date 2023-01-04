@@ -27,7 +27,7 @@ type IPCGatewayState struct {
 }
 
 func (st *IPCGatewayState) GetSubnet(s adt.Store, id address.Address) (SubnetID, error) {
-	subnetID, err := getOutOfHamt[SubnetID](st.Subnets, s, abi.AddrKey(id))
+	subnetID, err := getOutOfHamt[SubnetID](st.Subnets, s, abi.AddrKey(id)) // TODO pass zero-value too for all of them
 	return subnetID, err
 }
 
