@@ -8,7 +8,6 @@ import (
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
 	mbig "math/big"
-	"sync"
 )
 
 func GetOutOfAdtArray[T any](adtArray *adt.Array, nonce uint64) (*T, error) {
@@ -64,11 +63,6 @@ func GetOutOfHamt[T any](cID cid.Cid, s adt.Store, k abi.Keyer) (*T, error) {
 	}
 	return &out, err
 }
-
-var (
-	threshold         mbig.Rat
-	calcThresholdOnce sync.Once
-)
 
 func MajorityThreshold() mbig.Rat {
 	x := mbig.NewInt(2)
