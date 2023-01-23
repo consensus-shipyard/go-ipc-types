@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
@@ -64,18 +63,6 @@ func (st *IPCSubnetActorState) HasMajorityVote(s adt.Store, v Votes) (bool, erro
 	threshold := utils.MajorityThreshold()
 	return div.Cmp(&threshold) >= 0, nil
 
-}
-
-func getMsgMeta(msgMetas *adt.Map, c cid.Cid) (*CrossMsgs, bool, error) {
-	var out CrossMsgs
-	found, err := msgMetas.Get(abi.CidKey(c), &out)
-	if err != nil {
-		return nil, false, fmt.Errorf("failed to get crossMsgMeta from registry with cid %v: %w", c, err)
-	}
-	if !found {
-		return nil, false, nil
-	}
-	return &out, true, nil
 }
 
 type ConsensusType int64
