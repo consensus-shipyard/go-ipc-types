@@ -1,4 +1,4 @@
-module go-ipc-types
+module github.com/consensus-shipyard/go-ipc-types
 
 go 1.19
 
