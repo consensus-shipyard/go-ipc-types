@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/filecoin-project/go-address"
 	"github.com/stretchr/testify/require"
-	ipct "go-ipc-types/types"
+	ipct "github.com/consensus-shipyard/go-ipc-types/types"
 	"testing"
 )
 
