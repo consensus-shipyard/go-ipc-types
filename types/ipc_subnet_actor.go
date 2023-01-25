@@ -6,7 +6,7 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
-	"go-ipc-types/utils"
+	"github.com/consensus-shipyard/go-ipc-types/utils"
 	mbig "math/big"
 )
 

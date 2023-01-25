@@ -2,7 +2,7 @@ package main
 
 import (
 	gen "github.com/whyrusleeping/cbor-gen"
-	"go-ipc-types/types"
+	"github.com/consensus-shipyard/go-ipc-types/types"
 )
 
 func main() {
