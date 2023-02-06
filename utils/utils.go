@@ -2,12 +2,14 @@ package utils
 
 import (
 	"fmt"
+	mbig "math/big"
+
+	"github.com/ipfs/go-cid"
+
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/cbor"
 	"github.com/filecoin-project/specs-actors/v7/actors/builtin"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
-	mbig "math/big"
 )
 
 func GetOutOfAdtArray[T any](adtArray *adt.Array, nonce uint64) (*T, error) {

@@ -1,8 +1,8 @@
 package main
 
 import (
-	gen "github.com/whyrusleeping/cbor-gen"
 	"github.com/consensus-shipyard/go-ipc-types/types"
+	gen "github.com/whyrusleeping/cbor-gen"
 )
 
 func main() {
