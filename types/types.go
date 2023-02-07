@@ -37,7 +37,7 @@ type SubnetID struct {
 	Actor  address.Address
 }
 
-var id0, _ = address.NewIDAddress(0) // TODO check with Alfonso
+var id0, _ = address.NewIDAddress(0)
 
 const (
 	RootStr          = "/root"
