@@ -4,10 +4,11 @@ package types
 
 import (
 	"fmt"
-	"github.com/filecoin-project/go-address"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/filecoin-project/go-address"
 )
 
 type IPCAddress struct {
@@ -36,7 +37,7 @@ type SubnetID struct {
 	Actor  address.Address
 }
 
-var id0, _ = address.NewIDAddress(0) //TODO check with Alfonso
+var id0, _ = address.NewIDAddress(0)
 
 const (
 	RootStr          = "/root"
@@ -95,7 +96,7 @@ func (id SubnetID) String() string {
 			return UndefStr
 		}
 	}
-	return strings.Join([]string{id.Parent, id.Actor.String()}, SubnetSeparator)
+	return filepath.Join(id.Parent, id.Actor.String())
 }
 
 func (id SubnetID) CommonParent(other SubnetID) (*SubnetID, int) {

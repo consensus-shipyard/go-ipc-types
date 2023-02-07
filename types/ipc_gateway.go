@@ -2,24 +2,26 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/consensus-shipyard/go-ipc-types/utils"
+	"github.com/ipfs/go-cid"
+
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
-	"github.com/consensus-shipyard/go-ipc-types/utils"
-	"strings"
 )
 
 type IPCGatewayState struct {
 	NetworkName          SubnetID
 	TotalSubnets         uint64
 	MinStake             abi.TokenAmount
-	Subnets              cid.Cid //TCid<THamt<Cid, Subnet>>
+	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
 	CheckPeriod          ChainEpoch
-	Checkpoints          cid.Cid //TCid<THamt<ChainEpoch, Checkpoint>>
-	CheckMsgRegistry     cid.Cid //TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
+	Checkpoints          cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
+	CheckMsgRegistry     cid.Cid // TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
 	Nonce                uint64
 	BottomupNonce        uint64
-	BottomupMsgMeta      cid.Cid //TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
+	BottomupMsgMeta      cid.Cid // TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
 	AppliedBottomupNonce uint64
 	AppliedTopdownNonce  uint64
 }
@@ -27,7 +29,7 @@ type IPCGatewayState struct {
 type Subnet struct {
 	ID             SubnetID
 	Stake          abi.TokenAmount
-	TopDownMsgs    cid.Cid //TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
+	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
 	Nonce          uint64
 	CircSupply     abi.TokenAmount
 	Status         Status
@@ -110,7 +112,7 @@ func (st *IPCGatewayState) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*C
 		if err != nil {
 			return nil, err
 		}
-		if meta != nil { //then found
+		if meta != nil { // then found
 			out = append(out, meta)
 		}
 	}
