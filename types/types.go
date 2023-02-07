@@ -97,7 +97,6 @@ func (id SubnetID) String() string {
 		}
 	}
 	return filepath.Join(id.Parent, id.Actor.String())
-	// return strings.Join([]string{id.Parent, id.Actor.String()}, SubnetSeparator)
 }
 
 func (id SubnetID) CommonParent(other SubnetID) (*SubnetID, int) {
