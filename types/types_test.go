@@ -3,10 +3,12 @@ package types_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/filecoin-project/go-address"
-	"github.com/stretchr/testify/require"
-	ipct "github.com/consensus-shipyard/go-ipc-types/types"
 	"testing"
+
+	ipct "github.com/consensus-shipyard/go-ipc-types/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/filecoin-project/go-address"
 )
 
 func TestNaming(t *testing.T) {
@@ -67,7 +69,12 @@ func TestHAddress(t *testing.T) {
 
 	raw := a.RawAddress
 	require.Equal(t, id, raw)
+}
 
+func TestSubnetID(t *testing.T) {
+	id, err := ipct.NewSubnetIDFromString("/root/t01")
+	require.NoError(t, err)
+	require.Equal(t, "/root/f01", id.String())
 }
 
 func TestSubnetOps(t *testing.T) {

@@ -1,13 +1,15 @@
 package types
 
 import (
+	mbig "math/big"
+
+	"github.com/consensus-shipyard/go-ipc-types/utils"
+	"github.com/ipfs/go-cid"
+
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/go-state-types/big"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
-	"github.com/consensus-shipyard/go-ipc-types/utils"
-	mbig "math/big"
 )
 
 type IPCSubnetActorState struct { // TODO change name for IPCSubnetActorState once put in its own file
@@ -17,13 +19,13 @@ type IPCSubnetActorState struct { // TODO change name for IPCSubnetActorState on
 	Consensus         ConsensusType
 	MinValidatorStake abi.TokenAmount
 	TotalStake        abi.TokenAmount
-	Stake             cid.Cid //TCid<THamt<Cid,TokenAmount>>
+	Stake             cid.Cid // TCid<THamt<Cid,TokenAmount>>
 	Status            Status
 	Genesis           []byte
 	FinalityThreshold ChainEpoch
 	CheckPeriod       ChainEpoch
-	Checkpoints       cid.Cid //TCid<THamt<Cid, Checkpoint>>
-	WindowChecks      cid.Cid //TCid<THamt<Cid, Votes>>,
+	Checkpoints       cid.Cid // TCid<THamt<Cid, Checkpoint>>
+	WindowChecks      cid.Cid // TCid<THamt<Cid, Votes>>,
 	ValidatorSet      []Validator
 	MinValidators     uint64
 }
@@ -149,20 +151,20 @@ type CheckData struct {
 	Source    SubnetID
 	TipSet    []byte
 	Epoch     ChainEpoch
-	PrevCheck cid.Cid //TCid<TLink<Checkpoint>>
+	PrevCheck cid.Cid // TCid<TLink<Checkpoint>>
 	Children  []ChildCheck
 	CrossMsgs []CrossMsgMeta
 }
 
 type ChildCheck struct {
 	Source SubnetID
-	Checks cid.Cid //Vec<TCid<TLink<Checkpoint>>>,
+	Checks cid.Cid // Vec<TCid<TLink<Checkpoint>>>,
 }
 
 type CrossMsgMeta struct {
 	From    SubnetID
 	To      SubnetID
-	MsgsCID cid.Cid //TCid<TLink<CrossMsgs>>,
+	MsgsCID cid.Cid // TCid<TLink<CrossMsgs>>,
 	Nonce   uint64
 	Value   abi.TokenAmount
 }
