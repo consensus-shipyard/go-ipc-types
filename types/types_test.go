@@ -72,7 +72,7 @@ func TestHAddress(t *testing.T) {
 }
 
 func TestSubnetID(t *testing.T) {
-	id, err := ipct.NewSubnetIDFromString("/root/t01")
+	id, err := ipct.NewSubnetIDFromString("/root/f01")
 	require.NoError(t, err)
 	require.Equal(t, "/root/f01", id.String())
 }

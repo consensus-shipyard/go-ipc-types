@@ -5,10 +5,9 @@ import (
 	"strings"
 
 	"github.com/consensus-shipyard/go-ipc-types/utils"
-	"github.com/ipfs/go-cid"
-
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
+	"github.com/ipfs/go-cid"
 )
 
 type IPCGatewayState struct {
@@ -17,8 +16,9 @@ type IPCGatewayState struct {
 	MinStake             abi.TokenAmount
 	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
 	CheckPeriod          ChainEpoch
-	Checkpoints          cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
-	CheckMsgRegistry     cid.Cid // TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
+	Checkpoints          cid.Cid //TCid<THamt<ChainEpoch, Checkpoint>>
+	CheckMsgRegistry     cid.Cid //TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
+	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>;
 	Nonce                uint64
 	BottomupNonce        uint64
 	BottomupMsgMeta      cid.Cid // TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
