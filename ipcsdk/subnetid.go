@@ -1,36 +1,14 @@
-package types
+package ipcsdk
 
 //go:generate go run ./gen/gen.go
 
 import (
-	"fmt"
 	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/filecoin-project/go-address"
 )
-
-type IPCAddress struct {
-	SubnetID   SubnetID
-	RawAddress address.Address
-}
-
-func IPCAddressFromString(addr string) (*IPCAddress, error) {
-	r := strings.Split(addr, IPCAddrSeparator)
-	if len(r) != 2 {
-		return nil, fmt.Errorf("invalid IPCAddress string type") // TODO Create new error, TODO Define Undef for IPCAddress
-	}
-	rawAddress, err := address.NewFromString(r[1])
-	if err != nil {
-		return nil, err
-	}
-	ptrSubnetID, err := SubnetIDFromString(r[0])
-	if err != nil {
-		return nil, err
-	}
-	return &IPCAddress{*ptrSubnetID, rawAddress}, nil
-}
 
 type SubnetID struct {
 	Parent string
@@ -191,4 +169,17 @@ func (id SubnetID) Up(curr SubnetID) *SubnetID {
 		return nil
 	}
 	return sn
+}
+
+func IsBottomup(from SubnetID, to SubnetID) bool {
+	ptrSubnetID, index := from.CommonParent(to)
+	if ptrSubnetID == nil {
+		return false
+	}
+
+	a := from.String()
+	components := strings.Split(a, SubnetSeparator)
+	count := len(components) - 1
+	return count > index
+
 }
