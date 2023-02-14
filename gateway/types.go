@@ -6,6 +6,10 @@ import (
 	"github.com/ipfs/go-cid"
 )
 
+// ManifestID is the id used to index the gateway actor
+// in the builtin-actors bundle.
+const ManifestID = "ipc_gateway"
+
 type StorableMsg struct {
 	From   ipcsdk.IPCAddress
 	To     ipcsdk.IPCAddress
