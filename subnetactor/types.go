@@ -6,6 +6,10 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 )
 
+// ManifestID is the id used to index the gateway actor
+// in the builtin-actors bundle.
+const ManifestID = "ipc_subnet_actor"
+
 type Validator struct {
 	Addr    address.Address
 	NetAddr string
@@ -14,7 +18,7 @@ type Validator struct {
 type ConstructParams struct {
 	Parent            ipcsdk.SubnetID
 	Name              string
-	IpcGatewayAddr    uint64
+	IpcGatewayAddr    address.Address
 	Consensus         ConsensusType
 	MinValidatorStake abi.TokenAmount
 	MinValidators     uint64
