@@ -1,7 +1,7 @@
 package main
 
 import (
-	subnetactor "github.com/consensus-shipyard/go-ipc-types/subnet"
+	subnetactor "github.com/consensus-shipyard/go-ipc-types/subnetactor"
 	gen "github.com/whyrusleeping/cbor-gen"
 )
 
