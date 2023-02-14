@@ -96,12 +96,12 @@ func TestSubnetOps(t *testing.T) {
 }
 
 func testDownOrUp(t *testing.T, from, to, expected string, down bool) {
-	sn, _ := ipcsdk.SubnetIDFromString(from)
-	arg, err := ipcsdk.SubnetIDFromString(to)
+	sn, _ := ipcsdk.NewSubnetIDFromString(from)
+	arg, err := ipcsdk.NewSubnetIDFromString(to)
 	if err != nil {
 		fmt.Println(err)
 	}
-	ex, _ := ipcsdk.SubnetIDFromString(expected)
+	ex, _ := ipcsdk.NewSubnetIDFromString(expected)
 	if down {
 		if expected != ipcsdk.UndefSubnetID.String() {
 			require.Equal(t, sn.Down(*arg), ex)
@@ -118,12 +118,12 @@ func testDownOrUp(t *testing.T, from, to, expected string, down bool) {
 }
 
 func testParentAndBottomUp(t *testing.T, from, to, parent string, exl int, bottomup bool) {
-	sFrom, err := ipcsdk.SubnetIDFromString(from)
+	sFrom, err := ipcsdk.NewSubnetIDFromString(from)
 	require.NoError(t, err)
-	sTo, err := ipcsdk.SubnetIDFromString(to)
+	sTo, err := ipcsdk.NewSubnetIDFromString(to)
 	require.NoError(t, err)
 	p, l := sFrom.CommonParent(*sTo)
-	sparent, err := ipcsdk.SubnetIDFromString(parent)
+	sparent, err := ipcsdk.NewSubnetIDFromString(parent)
 	require.NoError(t, err)
 	require.Equal(t, p, sparent)
 	require.Equal(t, exl, l)

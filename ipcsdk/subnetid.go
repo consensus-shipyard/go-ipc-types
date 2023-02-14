@@ -36,25 +36,25 @@ var UndefSubnetID = SubnetID{
 	Actor:  id0,
 }
 
-func NewSubnetIDFromString(addr string) (*SubnetID, error) {
+func NewSubnetIDFromString(addr string) (SubnetID, error) {
 	var out SubnetID
 	if addr == RootSubnet.String() {
 		out = RootSubnet
-		return &out, nil
+		return out, nil
 	}
 	dir, file := filepath.Split(addr)
 	act, err := address.NewFromString(file)
 	if err != nil {
-		return nil, err
+		return UndefSubnetID, err
 	}
-	return &SubnetID{
+	return SubnetID{
 		Parent: dir,
 		Actor:  act,
 	}, nil
 }
 
-func NewSubnetID(parent SubnetID, subnetAct address.Address) *SubnetID {
-	return &SubnetID{
+func NewSubnetID(parent SubnetID, subnetAct address.Address) SubnetID {
+	return SubnetID{
 		parent.String(),
 		subnetAct,
 	}
@@ -77,7 +77,7 @@ func (id SubnetID) String() string {
 	return filepath.Join(id.Parent, id.Actor.String())
 }
 
-func (id SubnetID) CommonParent(other SubnetID) (*SubnetID, int) {
+func (id SubnetID) CommonParent(other SubnetID) (SubnetID, int) {
 	s1 := strings.Split(id.String(), SubnetSeparator)
 	s2 := strings.Split(other.String(), SubnetSeparator)
 	if len(s1) < len(s2) {
@@ -90,69 +90,49 @@ func (id SubnetID) CommonParent(other SubnetID) (*SubnetID, int) {
 			out = path.Join(out, s)
 			l = i
 		} else {
-			sn, err := SubnetIDFromString(out)
+			sn, err := NewSubnetIDFromString(out)
 			if err != nil {
-				return nil, 0
+				return UndefSubnetID, 0
 			}
 			return sn, l
 		}
 	}
-	sn, err := SubnetIDFromString(out)
+	sn, err := NewSubnetIDFromString(out)
 	if err != nil {
-		return nil, 0
+		return UndefSubnetID, 0
 	}
 	return sn, l
 }
 
-func SubnetIDFromString(str string) (*SubnetID, error) {
-	switch str {
-	case RootStr:
-		out := RootSubnet
-		return &out, nil
-	case UndefStr:
-		return nil, nil
-	}
-
-	s1 := strings.Split(str, SubnetSeparator)
-	actor, err := address.NewFromString(s1[len(s1)-1])
-	if err != nil {
-		return nil, err
-	}
-	return &SubnetID{
-		Parent: strings.Join(s1[:len(s1)-1], SubnetSeparator),
-		Actor:  actor,
-	}, nil
-}
-
-func (id SubnetID) Down(curr SubnetID) *SubnetID {
+func (id SubnetID) Down(curr SubnetID) SubnetID {
 	s1 := strings.Split(id.String(), SubnetSeparator)
 	s2 := strings.Split(curr.String(), SubnetSeparator)
 	// curr needs to be contained in id
 	if len(s2) >= len(s1) {
-		return nil
+		return UndefSubnetID
 	}
 	_, l := id.CommonParent(curr)
 	out := SubnetSeparator
 	for i := 0; i <= l+1 && i < len(s1); i++ {
 		if i < len(s2) && s1[i] != s2[i] {
 			// they are not in a common path
-			return nil
+			return UndefSubnetID
 		}
 		out = path.Join(out, s1[i])
 	}
-	sn, err := SubnetIDFromString(out)
+	sn, err := NewSubnetIDFromString(out)
 	if err != nil {
-		return nil
+		return UndefSubnetID
 	}
 	return sn
 }
 
-func (id SubnetID) Up(curr SubnetID) *SubnetID {
+func (id SubnetID) Up(curr SubnetID) SubnetID {
 	s1 := strings.Split(id.String(), SubnetSeparator)
 	s2 := strings.Split(curr.String(), SubnetSeparator)
 	// curr needs to be contained in id
 	if len(s2) > len(s1) {
-		return nil
+		return UndefSubnetID
 	}
 
 	_, l := id.CommonParent(curr)
@@ -160,20 +140,20 @@ func (id SubnetID) Up(curr SubnetID) *SubnetID {
 	for i := 0; i < l; i++ {
 		if i < len(s1) && s1[i] != s2[i] {
 			// they are not in a common path
-			return nil
+			return UndefSubnetID
 		}
 		out = path.Join(out, s1[i])
 	}
-	sn, err := SubnetIDFromString(out)
+	sn, err := NewSubnetIDFromString(out)
 	if err != nil {
-		return nil
+		return UndefSubnetID
 	}
 	return sn
 }
 
 func IsBottomup(from SubnetID, to SubnetID) bool {
-	ptrSubnetID, index := from.CommonParent(to)
-	if ptrSubnetID == nil {
+	subnetID, index := from.CommonParent(to)
+	if subnetID == UndefSubnetID {
 		return false
 	}
 
