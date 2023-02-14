@@ -18,7 +18,7 @@ type Validator struct {
 type ConstructParams struct {
 	Parent            ipcsdk.SubnetID
 	Name              string
-	IpcGatewayAddr    address.Address
+	IpcGatewayAddr    uint64
 	Consensus         ConsensusType
 	MinValidatorStake abi.TokenAmount
 	MinValidators     uint64

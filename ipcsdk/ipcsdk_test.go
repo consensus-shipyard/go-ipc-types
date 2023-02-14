@@ -19,7 +19,7 @@ func TestNaming(t *testing.T) {
 	require.NoError(t, err)
 	root := ipcsdk.RootSubnet
 	ptrNet1 := ipcsdk.NewSubnetID(root, addr1)
-	ptrNet2 := ipcsdk.NewSubnetID(*ptrNet1, addr2)
+	ptrNet2 := ipcsdk.NewSubnetID(ptrNet1, addr2)
 
 	t.Log("Test actors")
 	actor1 := ptrNet1.Actor
@@ -56,7 +56,7 @@ func TestCborMarshal(t *testing.T) {
 	net2 := ipcsdk.SubnetID{}
 	err = net2.UnmarshalCBOR(&buf)
 	require.NoError(t, err)
-	require.Equal(t, net1, &net2)
+	require.Equal(t, net1, net2)
 }
 
 func TestHAddress(t *testing.T) {
@@ -104,15 +104,15 @@ func testDownOrUp(t *testing.T, from, to, expected string, down bool) {
 	ex, _ := ipcsdk.NewSubnetIDFromString(expected)
 	if down {
 		if expected != ipcsdk.UndefSubnetID.String() {
-			require.Equal(t, sn.Down(*arg), ex)
+			require.Equal(t, sn.Down(arg), ex)
 		} else {
-			require.Equal(t, sn.Down(*arg) == nil, true)
+			require.Equal(t, sn.Down(arg), ipcsdk.UndefSubnetID)
 		}
 	} else {
 		if expected != ipcsdk.UndefSubnetID.String() {
-			require.Equal(t, sn.Up(*arg), ex)
+			require.Equal(t, sn.Up(arg), ex)
 		} else {
-			require.Equal(t, sn.Up(*arg) == nil, true)
+			require.Equal(t, sn.Up(arg), ipcsdk.UndefSubnetID)
 		}
 	}
 }
@@ -122,11 +122,11 @@ func testParentAndBottomUp(t *testing.T, from, to, parent string, exl int, botto
 	require.NoError(t, err)
 	sTo, err := ipcsdk.NewSubnetIDFromString(to)
 	require.NoError(t, err)
-	p, l := sFrom.CommonParent(*sTo)
+	p, l := sFrom.CommonParent(sTo)
 	sparent, err := ipcsdk.NewSubnetIDFromString(parent)
 	require.NoError(t, err)
 	require.Equal(t, p, sparent)
 	require.Equal(t, exl, l)
-	require.Equal(t, ipcsdk.IsBottomup(*sFrom, *sTo), bottomup)
+	require.Equal(t, ipcsdk.IsBottomup(sFrom, sTo), bottomup)
 
 }
