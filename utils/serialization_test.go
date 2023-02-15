@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/hex"
 	"testing"
+	
+	"github.com/test-go/testify/require"
+	
+	"github.com/filecoin-project/go-state-types/big"
 
 	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
-	"github.com/filecoin-project/go-state-types/big"
-	"github.com/test-go/testify/require"
 )
 
 // TestCborSerialization cbor-serializes a specific type and prints in a log
