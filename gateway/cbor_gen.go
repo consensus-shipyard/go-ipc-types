@@ -908,12 +908,12 @@ func (t *StorableMsg) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.From (sdk.Address) (struct)
+	// t.From (sdk.IPCAddress) (struct)
 	if err := t.From.MarshalCBOR(w); err != nil {
 		return err
 	}
 
-	// t.To (sdk.Address) (struct)
+	// t.To (sdk.IPCAddress) (struct)
 	if err := t.To.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -961,7 +961,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.From (sdk.Address) (struct)
+	// t.From (sdk.IPCAddress) (struct)
 
 	{
 
@@ -970,7 +970,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.To (sdk.Address) (struct)
+	// t.To (sdk.IPCAddress) (struct)
 
 	{
 

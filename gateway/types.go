@@ -28,8 +28,8 @@ func (sn Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, error) {
 }
 
 type StorableMsg struct {
-	From   sdk.Address
-	To     sdk.Address
+	From   sdk.IPCAddress
+	To     sdk.IPCAddress
 	Method abi.MethodNum
 	Params RawBytes
 	Value  abi.TokenAmount

@@ -18,7 +18,7 @@ var _ = sort.Sort
 
 var lengthBufAddress = []byte{130}
 
-func (t *Address) MarshalCBOR(w io.Writer) error {
+func (t *IPCAddress) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
@@ -39,8 +39,8 @@ func (t *Address) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *Address) UnmarshalCBOR(r io.Reader) error {
-	*t = Address{}
+func (t *IPCAddress) UnmarshalCBOR(r io.Reader) error {
+	*t = IPCAddress{}
 
 	br := cbg.GetPeeker(r)
 	scratch := make([]byte, 8)

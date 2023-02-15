@@ -7,7 +7,7 @@ import (
 
 func main() {
 	if err := gen.WriteTupleEncodersToFile("./cbor_gen.go", "sdk",
-		sdk.Address{},
+		sdk.IPCAddress{},
 		sdk.SubnetID{},
 	); err != nil {
 		panic(err)

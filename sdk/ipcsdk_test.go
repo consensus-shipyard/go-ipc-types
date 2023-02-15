@@ -66,7 +66,7 @@ func TestCborMarshal(t *testing.T) {
 func TestHAddress(t *testing.T) {
 	address.CurrentNetwork = address.Mainnet
 	id, _ := address.NewIDAddress(1000)
-	a := sdk.Address{sdk.RootSubnet, id}
+	a := sdk.IPCAddress{sdk.RootSubnet, id}
 
 	sn := a.SubnetID
 	require.Equal(t, sdk.RootSubnet, sn)
