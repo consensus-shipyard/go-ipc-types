@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/hex"
 	"testing"
-	
+
 	"github.com/test-go/testify/require"
-	
+
 	"github.com/filecoin-project/go-state-types/big"
 
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
 )
 
@@ -23,7 +23,7 @@ import (
 // with any type implementing the CborMarshaler interface.
 func TestCborSerialization(t *testing.T) {
 	params := subnetactor.ConstructParams{
-		Parent:            ipcsdk.RootSubnet,
+		Parent:            sdk.RootSubnet,
 		Name:              "test",
 		IpcGatewayAddr:    64,
 		CheckPeriod:       0,
