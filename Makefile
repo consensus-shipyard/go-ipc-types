@@ -32,3 +32,8 @@ lint:
 .PHONY: vulncheck
 vulncheck:
 	govulncheck -v ./...
+
+.PHONY: generate
+generate:
+	gofmt -w -s .
+	go generate ./...
