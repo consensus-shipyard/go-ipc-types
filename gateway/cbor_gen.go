@@ -5,6 +5,7 @@ package gateway
 import (
 	"fmt"
 	"io"
+	"math"
 	"sort"
 
 	abi "github.com/filecoin-project/go-state-types/abi"
@@ -15,6 +16,7 @@ import (
 
 var _ = xerrors.Errorf
 var _ = cid.Undef
+var _ = math.E
 var _ = sort.Sort
 
 var lengthBufState = []byte{141}
@@ -24,106 +26,112 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufState); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufState); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.NetworkName (sdk.SubnetID) (struct)
-	if err := t.NetworkName.MarshalCBOR(w); err != nil {
+	if err := t.NetworkName.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.TotalSubnets (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.TotalSubnets)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.TotalSubnets)); err != nil {
 		return err
 	}
 
 	// t.MinStake (big.Int) (struct)
-	if err := t.MinStake.MarshalCBOR(w); err != nil {
+	if err := t.MinStake.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Subnets (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.Subnets); err != nil {
+	if err := cbg.WriteCid(cw, t.Subnets); err != nil {
 		return xerrors.Errorf("failed to write cid field t.Subnets: %w", err)
 	}
 
 	// t.CheckPeriod (abi.ChainEpoch) (int64)
 	if t.CheckPeriod >= 0 {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.CheckPeriod)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.CheckPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.CheckPeriod-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.CheckPeriod-1)); err != nil {
 			return err
 		}
 	}
 
 	// t.Checkpoints (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.Checkpoints); err != nil {
+	if err := cbg.WriteCid(cw, t.Checkpoints); err != nil {
 		return xerrors.Errorf("failed to write cid field t.Checkpoints: %w", err)
 	}
 
 	// t.CheckMsgRegistry (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.CheckMsgRegistry); err != nil {
+	if err := cbg.WriteCid(cw, t.CheckMsgRegistry); err != nil {
 		return xerrors.Errorf("failed to write cid field t.CheckMsgRegistry: %w", err)
 	}
 
 	// t.Postbox (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.Postbox); err != nil {
+	if err := cbg.WriteCid(cw, t.Postbox); err != nil {
 		return xerrors.Errorf("failed to write cid field t.Postbox: %w", err)
 	}
 
 	// t.Nonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
 		return err
 	}
 
 	// t.BottomupNonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.BottomupNonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.BottomupNonce)); err != nil {
 		return err
 	}
 
 	// t.BottomupMsgMeta (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.BottomupMsgMeta); err != nil {
+	if err := cbg.WriteCid(cw, t.BottomupMsgMeta); err != nil {
 		return xerrors.Errorf("failed to write cid field t.BottomupMsgMeta: %w", err)
 	}
 
 	// t.AppliedBottomupNonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.AppliedBottomupNonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.AppliedBottomupNonce)); err != nil {
 		return err
 	}
 
 	// t.AppliedTopdownNonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.AppliedTopdownNonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.AppliedTopdownNonce)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (t *State) UnmarshalCBOR(r io.Reader) error {
+func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = State{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -136,7 +144,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.NetworkName.UnmarshalCBOR(br); err != nil {
+		if err := t.NetworkName.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.NetworkName: %w", err)
 		}
 
@@ -145,7 +153,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -159,7 +167,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.MinStake.UnmarshalCBOR(br); err != nil {
+		if err := t.MinStake.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.MinStake: %w", err)
 		}
 
@@ -168,7 +176,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.Subnets: %w", err)
 		}
@@ -178,7 +186,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 	}
 	// t.CheckPeriod (abi.ChainEpoch) (int64)
 	{
-		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err := cr.ReadHeader()
 		var extraI int64
 		if err != nil {
 			return err
@@ -205,7 +213,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.Checkpoints: %w", err)
 		}
@@ -217,7 +225,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.CheckMsgRegistry: %w", err)
 		}
@@ -229,7 +237,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.Postbox: %w", err)
 		}
@@ -241,7 +249,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -255,7 +263,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -269,7 +277,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.BottomupMsgMeta: %w", err)
 		}
@@ -281,7 +289,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -295,7 +303,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -315,18 +323,19 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufConstructParams); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufConstructParams); err != nil {
 		return err
 	}
-
-	scratch := make([]byte, 9)
 
 	// t.NetworkName (string) (string)
 	if len(t.NetworkName) > cbg.MaxLength {
 		return xerrors.Errorf("Value in field t.NetworkName was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.NetworkName))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(t.NetworkName))); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, string(t.NetworkName)); err != nil {
@@ -335,27 +344,32 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 
 	// t.CheckpointPeriod (abi.ChainEpoch) (int64)
 	if t.CheckpointPeriod >= 0 {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.CheckpointPeriod)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.CheckpointPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.CheckpointPeriod-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.CheckpointPeriod-1)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *ConstructParams) UnmarshalCBOR(r io.Reader) error {
+func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = ConstructParams{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -367,7 +381,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) error {
 	// t.NetworkName (string) (string)
 
 	{
-		sval, err := cbg.ReadStringBuf(br, scratch)
+		sval, err := cbg.ReadString(cr)
 		if err != nil {
 			return err
 		}
@@ -376,7 +390,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) error {
 	}
 	// t.CheckpointPeriod (abi.ChainEpoch) (int64)
 	{
-		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err := cr.ReadHeader()
 		var extraI int64
 		if err != nil {
 			return err
@@ -409,14 +423,15 @@ func (t *Checkpoint) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCheckpoint); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCheckpoint); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Data (gateway.CheckData) (struct)
-	if err := t.Data.MarshalCBOR(w); err != nil {
+	if err := t.Data.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -425,26 +440,31 @@ func (t *Checkpoint) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("Byte array in field t.Sig was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.Sig))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.Sig))); err != nil {
 		return err
 	}
 
-	if _, err := w.Write(t.Sig[:]); err != nil {
+	if _, err := cw.Write(t.Sig[:]); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *Checkpoint) UnmarshalCBOR(r io.Reader) error {
+func (t *Checkpoint) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = Checkpoint{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -457,14 +477,14 @@ func (t *Checkpoint) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Data.UnmarshalCBOR(br); err != nil {
+		if err := t.Data.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Data: %w", err)
 		}
 
 	}
 	// t.Sig ([]uint8) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -480,7 +500,7 @@ func (t *Checkpoint) UnmarshalCBOR(r io.Reader) error {
 		t.Sig = make([]uint8, extra)
 	}
 
-	if _, err := io.ReadFull(br, t.Sig[:]); err != nil {
+	if _, err := io.ReadFull(cr, t.Sig[:]); err != nil {
 		return err
 	}
 	return nil
@@ -493,14 +513,15 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCheckData); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCheckData); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Source (sdk.SubnetID) (struct)
-	if err := t.Source.MarshalCBOR(w); err != nil {
+	if err := t.Source.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -509,28 +530,28 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("Byte array in field t.TipSet was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.TipSet))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.TipSet))); err != nil {
 		return err
 	}
 
-	if _, err := w.Write(t.TipSet[:]); err != nil {
+	if _, err := cw.Write(t.TipSet[:]); err != nil {
 		return err
 	}
 
 	// t.Epoch (abi.ChainEpoch) (int64)
 	if t.Epoch >= 0 {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Epoch)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Epoch)); err != nil {
 			return err
 		}
 	} else {
-		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajNegativeInt, uint64(-t.Epoch-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Epoch-1)); err != nil {
 			return err
 		}
 	}
 
 	// t.PrevCheck (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.PrevCheck); err != nil {
+	if err := cbg.WriteCid(cw, t.PrevCheck); err != nil {
 		return xerrors.Errorf("failed to write cid field t.PrevCheck: %w", err)
 	}
 
@@ -539,11 +560,11 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("Slice value in field t.Children was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.Children))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Children))); err != nil {
 		return err
 	}
 	for _, v := range t.Children {
-		if err := v.MarshalCBOR(w); err != nil {
+		if err := v.MarshalCBOR(cw); err != nil {
 			return err
 		}
 	}
@@ -553,27 +574,32 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("Slice value in field t.CrossMsgs was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.CrossMsgs))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.CrossMsgs))); err != nil {
 		return err
 	}
 	for _, v := range t.CrossMsgs {
-		if err := v.MarshalCBOR(w); err != nil {
+		if err := v.MarshalCBOR(cw); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
+func (t *CheckData) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = CheckData{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -586,14 +612,14 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Source.UnmarshalCBOR(br); err != nil {
+		if err := t.Source.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Source: %w", err)
 		}
 
 	}
 	// t.TipSet ([]uint8) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -609,12 +635,12 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 		t.TipSet = make([]uint8, extra)
 	}
 
-	if _, err := io.ReadFull(br, t.TipSet[:]); err != nil {
+	if _, err := io.ReadFull(cr, t.TipSet[:]); err != nil {
 		return err
 	}
 	// t.Epoch (abi.ChainEpoch) (int64)
 	{
-		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err := cr.ReadHeader()
 		var extraI int64
 		if err != nil {
 			return err
@@ -641,7 +667,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.PrevCheck: %w", err)
 		}
@@ -651,7 +677,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 	}
 	// t.Children ([]gateway.ChildCheck) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -671,7 +697,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 	for i := 0; i < int(extra); i++ {
 
 		var v ChildCheck
-		if err := v.UnmarshalCBOR(br); err != nil {
+		if err := v.UnmarshalCBOR(cr); err != nil {
 			return err
 		}
 
@@ -680,7 +706,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 
 	// t.CrossMsgs ([]gateway.CrossMsgMeta) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -700,7 +726,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 	for i := 0; i < int(extra); i++ {
 
 		var v CrossMsgMeta
-		if err := v.UnmarshalCBOR(br); err != nil {
+		if err := v.UnmarshalCBOR(cr); err != nil {
 			return err
 		}
 
@@ -717,36 +743,42 @@ func (t *ChildCheck) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufChildCheck); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufChildCheck); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Source (sdk.SubnetID) (struct)
-	if err := t.Source.MarshalCBOR(w); err != nil {
+	if err := t.Source.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Checks (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.Checks); err != nil {
+	if err := cbg.WriteCid(cw, t.Checks); err != nil {
 		return xerrors.Errorf("failed to write cid field t.Checks: %w", err)
 	}
 
 	return nil
 }
 
-func (t *ChildCheck) UnmarshalCBOR(r io.Reader) error {
+func (t *ChildCheck) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = ChildCheck{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -759,7 +791,7 @@ func (t *ChildCheck) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Source.UnmarshalCBOR(br); err != nil {
+		if err := t.Source.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Source: %w", err)
 		}
 
@@ -768,7 +800,7 @@ func (t *ChildCheck) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.Checks: %w", err)
 		}
@@ -786,51 +818,57 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCrossMsgMeta); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCrossMsgMeta); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.From (sdk.SubnetID) (struct)
-	if err := t.From.MarshalCBOR(w); err != nil {
+	if err := t.From.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.To (sdk.SubnetID) (struct)
-	if err := t.To.MarshalCBOR(w); err != nil {
+	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.MsgsCID (cid.Cid) (struct)
 
-	if err := cbg.WriteCidBuf(scratch, w, t.MsgsCID); err != nil {
+	if err := cbg.WriteCid(cw, t.MsgsCID); err != nil {
 		return xerrors.Errorf("failed to write cid field t.MsgsCID: %w", err)
 	}
 
 	// t.Nonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
 		return err
 	}
 
 	// t.Value (big.Int) (struct)
-	if err := t.Value.MarshalCBOR(w); err != nil {
+	if err := t.Value.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
+func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = CrossMsgMeta{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -843,7 +881,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.From.UnmarshalCBOR(br); err != nil {
+		if err := t.From.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.From: %w", err)
 		}
 
@@ -852,7 +890,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.To.UnmarshalCBOR(br); err != nil {
+		if err := t.To.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.To: %w", err)
 		}
 
@@ -861,7 +899,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		c, err := cbg.ReadCid(br)
+		c, err := cbg.ReadCid(cr)
 		if err != nil {
 			return xerrors.Errorf("failed to read cid field t.MsgsCID: %w", err)
 		}
@@ -873,7 +911,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -887,7 +925,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Value.UnmarshalCBOR(br); err != nil {
+		if err := t.Value.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Value: %w", err)
 		}
 
@@ -902,57 +940,63 @@ func (t *StorableMsg) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufStorableMsg); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufStorableMsg); err != nil {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.From (sdk.IPCAddress) (struct)
-	if err := t.From.MarshalCBOR(w); err != nil {
+	if err := t.From.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.To (sdk.IPCAddress) (struct)
-	if err := t.To.MarshalCBOR(w); err != nil {
+	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Method (abi.MethodNum) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Method)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Method)); err != nil {
 		return err
 	}
 
 	// t.Params (gateway.RawBytes) (struct)
-	if err := t.Params.MarshalCBOR(w); err != nil {
+	if err := t.Params.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Value (big.Int) (struct)
-	if err := t.Value.MarshalCBOR(w); err != nil {
+	if err := t.Value.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Nonce (uint64) (uint64)
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
+func (t *StorableMsg) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = StorableMsg{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -965,7 +1009,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.From.UnmarshalCBOR(br); err != nil {
+		if err := t.From.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.From: %w", err)
 		}
 
@@ -974,7 +1018,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.To.UnmarshalCBOR(br); err != nil {
+		if err := t.To.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.To: %w", err)
 		}
 
@@ -983,7 +1027,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -997,7 +1041,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Params.UnmarshalCBOR(br); err != nil {
+		if err := t.Params.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Params: %w", err)
 		}
 
@@ -1006,7 +1050,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Value.UnmarshalCBOR(br); err != nil {
+		if err := t.Value.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Value: %w", err)
 		}
 
@@ -1015,7 +1059,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
@@ -1035,37 +1079,43 @@ func (t *RawBytes) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufRawBytes); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufRawBytes); err != nil {
 		return err
 	}
-
-	scratch := make([]byte, 9)
 
 	// t.Bytes ([]uint8) (slice)
 	if len(t.Bytes) > cbg.ByteArrayMaxLen {
 		return xerrors.Errorf("Byte array in field t.Bytes was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajByteString, uint64(len(t.Bytes))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.Bytes))); err != nil {
 		return err
 	}
 
-	if _, err := w.Write(t.Bytes[:]); err != nil {
+	if _, err := cw.Write(t.Bytes[:]); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *RawBytes) UnmarshalCBOR(r io.Reader) error {
+func (t *RawBytes) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = RawBytes{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1076,7 +1126,7 @@ func (t *RawBytes) UnmarshalCBOR(r io.Reader) error {
 
 	// t.Bytes ([]uint8) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -1092,7 +1142,7 @@ func (t *RawBytes) UnmarshalCBOR(r io.Reader) error {
 		t.Bytes = make([]uint8, extra)
 	}
 
-	if _, err := io.ReadFull(br, t.Bytes[:]); err != nil {
+	if _, err := io.ReadFull(cr, t.Bytes[:]); err != nil {
 		return err
 	}
 	return nil
@@ -1105,12 +1155,15 @@ func (t *CrossMsg) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCrossMsg); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCrossMsg); err != nil {
 		return err
 	}
 
 	// t.Msg (gateway.StorableMsg) (struct)
-	if err := t.Msg.MarshalCBOR(w); err != nil {
+	if err := t.Msg.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -1121,16 +1174,21 @@ func (t *CrossMsg) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *CrossMsg) UnmarshalCBOR(r io.Reader) error {
+func (t *CrossMsg) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = CrossMsg{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1143,14 +1201,14 @@ func (t *CrossMsg) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Msg.UnmarshalCBOR(br); err != nil {
+		if err := t.Msg.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Msg: %w", err)
 		}
 
 	}
 	// t.Wrapped (bool) (bool)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -1175,27 +1233,35 @@ func (t *FundParams) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufFundParams); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufFundParams); err != nil {
 		return err
 	}
 
 	// t.Value (big.Int) (struct)
-	if err := t.Value.MarshalCBOR(w); err != nil {
+	if err := t.Value.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *FundParams) UnmarshalCBOR(r io.Reader) error {
+func (t *FundParams) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = FundParams{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1208,7 +1274,7 @@ func (t *FundParams) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Value.UnmarshalCBOR(br); err != nil {
+		if err := t.Value.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Value: %w", err)
 		}
 
@@ -1223,32 +1289,40 @@ func (t *CrossMsgParams) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCrossMsgParams); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCrossMsgParams); err != nil {
 		return err
 	}
 
 	// t.CrossMsg (gateway.CrossMsg) (struct)
-	if err := t.CrossMsg.MarshalCBOR(w); err != nil {
+	if err := t.CrossMsg.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.Destination (sdk.SubnetID) (struct)
-	if err := t.Destination.MarshalCBOR(w); err != nil {
+	if err := t.Destination.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *CrossMsgParams) UnmarshalCBOR(r io.Reader) error {
+func (t *CrossMsgParams) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = CrossMsgParams{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1261,7 +1335,7 @@ func (t *CrossMsgParams) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.CrossMsg.UnmarshalCBOR(br); err != nil {
+		if err := t.CrossMsg.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.CrossMsg: %w", err)
 		}
 
@@ -1270,7 +1344,7 @@ func (t *CrossMsgParams) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Destination.UnmarshalCBOR(br); err != nil {
+		if err := t.Destination.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Destination: %w", err)
 		}
 
@@ -1285,27 +1359,35 @@ func (t *ApplyMsgParams) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufApplyMsgParams); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufApplyMsgParams); err != nil {
 		return err
 	}
 
 	// t.CrossMsg (gateway.CrossMsg) (struct)
-	if err := t.CrossMsg.MarshalCBOR(w); err != nil {
+	if err := t.CrossMsg.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *ApplyMsgParams) UnmarshalCBOR(r io.Reader) error {
+func (t *ApplyMsgParams) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = ApplyMsgParams{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1318,7 +1400,7 @@ func (t *ApplyMsgParams) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.CrossMsg.UnmarshalCBOR(br); err != nil {
+		if err := t.CrossMsg.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.CrossMsg: %w", err)
 		}
 
@@ -1333,22 +1415,23 @@ func (t *CrossMsgs) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufCrossMsgs); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufCrossMsgs); err != nil {
 		return err
 	}
-
-	scratch := make([]byte, 9)
 
 	// t.Msgs ([]gateway.CrossMsg) (slice)
 	if len(t.Msgs) > cbg.MaxLength {
 		return xerrors.Errorf("Slice value in field t.Msgs was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.Msgs))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Msgs))); err != nil {
 		return err
 	}
 	for _, v := range t.Msgs {
-		if err := v.MarshalCBOR(w); err != nil {
+		if err := v.MarshalCBOR(cw); err != nil {
 			return err
 		}
 	}
@@ -1358,27 +1441,32 @@ func (t *CrossMsgs) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("Slice value in field t.Metas was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajArray, uint64(len(t.Metas))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Metas))); err != nil {
 		return err
 	}
 	for _, v := range t.Metas {
-		if err := v.MarshalCBOR(w); err != nil {
+		if err := v.MarshalCBOR(cw); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
+func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = CrossMsgs{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -1389,7 +1477,7 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
 
 	// t.Msgs ([]gateway.CrossMsg) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -1409,7 +1497,7 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
 	for i := 0; i < int(extra); i++ {
 
 		var v CrossMsg
-		if err := v.UnmarshalCBOR(br); err != nil {
+		if err := v.UnmarshalCBOR(cr); err != nil {
 			return err
 		}
 
@@ -1418,7 +1506,7 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
 
 	// t.Metas ([]gateway.CrossMsgMeta) (slice)
 
-	maj, extra, err = cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err = cr.ReadHeader()
 	if err != nil {
 		return err
 	}
@@ -1438,7 +1526,7 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) error {
 	for i := 0; i < int(extra); i++ {
 
 		var v CrossMsgMeta
-		if err := v.UnmarshalCBOR(br); err != nil {
+		if err := v.UnmarshalCBOR(cr); err != nil {
 			return err
 		}
 

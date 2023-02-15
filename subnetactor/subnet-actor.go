@@ -1,7 +1,5 @@
 package subnetactor
 
-//go:generate go run ./gen/gen.go
-
 import (
 	mbig "math/big"
 
