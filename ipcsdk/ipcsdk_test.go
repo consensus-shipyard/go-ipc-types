@@ -11,6 +11,10 @@ import (
 	"github.com/filecoin-project/go-address"
 )
 
+func init() {
+	address.CurrentNetwork = address.Mainnet
+}
+
 func TestNaming(t *testing.T) {
 	address.CurrentNetwork = address.Mainnet
 	addr1, err := address.NewIDAddress(101)
