@@ -48,7 +48,7 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.ParentID (sdk.SubnetID) (struct)
-	if err := t.ParentID.MarshalCBOR(w); err != nil {
+	if err := t.ParentID.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -451,10 +451,8 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Parent (sdk.SubnetID) (struct)
-	if err := t.Parent.MarshalCBOR(w); err != nil {
+	if err := t.Parent.MarshalCBOR(cw); err != nil {
 		return err
 	}
 

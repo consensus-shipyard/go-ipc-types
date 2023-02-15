@@ -33,10 +33,8 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.NetworkName (sdk.SubnetID) (struct)
-	if err := t.NetworkName.MarshalCBOR(w); err != nil {
+	if err := t.NetworkName.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -522,10 +520,8 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Source (sdk.SubnetID) (struct)
-	if err := t.Source.MarshalCBOR(w); err != nil {
+	if err := t.Source.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -754,10 +750,8 @@ func (t *ChildCheck) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.Source (sdk.SubnetID) (struct)
-	if err := t.Source.MarshalCBOR(w); err != nil {
+	if err := t.Source.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -831,15 +825,13 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.From (sdk.SubnetID) (struct)
-	if err := t.From.MarshalCBOR(w); err != nil {
+	if err := t.From.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.To (sdk.SubnetID) (struct)
-	if err := t.To.MarshalCBOR(w); err != nil {
+	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -955,15 +947,13 @@ func (t *StorableMsg) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	scratch := make([]byte, 9)
-
 	// t.From (sdk.IPCAddress) (struct)
-	if err := t.From.MarshalCBOR(w); err != nil {
+	if err := t.From.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
 	// t.To (sdk.IPCAddress) (struct)
-	if err := t.To.MarshalCBOR(w); err != nil {
+	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -1312,7 +1302,7 @@ func (t *CrossMsgParams) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.Destination (sdk.SubnetID) (struct)
-	if err := t.Destination.MarshalCBOR(w); err != nil {
+	if err := t.Destination.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil

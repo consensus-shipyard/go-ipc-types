@@ -18,19 +18,22 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufAddress = []byte{130}
+var lengthBufIPCAddress = []byte{130}
 
 func (t *IPCAddress) MarshalCBOR(w io.Writer) error {
 	if t == nil {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufAddress); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufIPCAddress); err != nil {
 		return err
 	}
 
 	// t.SubnetID (sdk.SubnetID) (struct)
-	if err := t.SubnetID.MarshalCBOR(w); err != nil {
+	if err := t.SubnetID.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -41,7 +44,7 @@ func (t *IPCAddress) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
-func (t *IPCAddress) UnmarshalCBOR(r io.Reader) error {
+func (t *IPCAddress) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = IPCAddress{}
 
 	cr := cbg.NewCborReader(r)
