@@ -36,4 +36,4 @@ vulncheck:
 .PHONY: generate
 generate:
 	gofmt -w -s .
-	go generate ./...
+	go run gen/gen.go

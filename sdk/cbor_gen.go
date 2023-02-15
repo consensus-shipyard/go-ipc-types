@@ -5,6 +5,7 @@ package sdk
 import (
 	"fmt"
 	"io"
+	"math"
 	"sort"
 
 	cid "github.com/ipfs/go-cid"
@@ -14,6 +15,7 @@ import (
 
 var _ = xerrors.Errorf
 var _ = cid.Undef
+var _ = math.E
 var _ = sort.Sort
 
 var lengthBufAddress = []byte{130}
@@ -33,7 +35,7 @@ func (t *IPCAddress) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.RawAddress (address.Address) (struct)
-	if err := t.RawAddress.MarshalCBOR(w); err != nil {
+	if err := t.RawAddress.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
@@ -42,13 +44,18 @@ func (t *IPCAddress) MarshalCBOR(w io.Writer) error {
 func (t *IPCAddress) UnmarshalCBOR(r io.Reader) error {
 	*t = IPCAddress{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -61,7 +68,7 @@ func (t *IPCAddress) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.SubnetID.UnmarshalCBOR(br); err != nil {
+		if err := t.SubnetID.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.SubnetID: %w", err)
 		}
 
@@ -70,7 +77,7 @@ func (t *IPCAddress) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.RawAddress.UnmarshalCBOR(br); err != nil {
+		if err := t.RawAddress.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.RawAddress: %w", err)
 		}
 
@@ -85,18 +92,19 @@ func (t *SubnetID) MarshalCBOR(w io.Writer) error {
 		_, err := w.Write(cbg.CborNull)
 		return err
 	}
-	if _, err := w.Write(lengthBufSubnetID); err != nil {
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufSubnetID); err != nil {
 		return err
 	}
-
-	scratch := make([]byte, 9)
 
 	// t.Parent (string) (string)
 	if len(t.Parent) > cbg.MaxLength {
 		return xerrors.Errorf("Value in field t.Parent was too long")
 	}
 
-	if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajTextString, uint64(len(t.Parent))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(t.Parent))); err != nil {
 		return err
 	}
 	if _, err := io.WriteString(w, string(t.Parent)); err != nil {
@@ -104,22 +112,27 @@ func (t *SubnetID) MarshalCBOR(w io.Writer) error {
 	}
 
 	// t.Actor (address.Address) (struct)
-	if err := t.Actor.MarshalCBOR(w); err != nil {
+	if err := t.Actor.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (t *SubnetID) UnmarshalCBOR(r io.Reader) error {
+func (t *SubnetID) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = SubnetID{}
 
-	br := cbg.GetPeeker(r)
-	scratch := make([]byte, 8)
+	cr := cbg.NewCborReader(r)
 
-	maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
+	maj, extra, err := cr.ReadHeader()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
 	if maj != cbg.MajArray {
 		return fmt.Errorf("cbor input should be of type array")
 	}
@@ -131,7 +144,7 @@ func (t *SubnetID) UnmarshalCBOR(r io.Reader) error {
 	// t.Parent (string) (string)
 
 	{
-		sval, err := cbg.ReadStringBuf(br, scratch)
+		sval, err := cbg.ReadString(cr)
 		if err != nil {
 			return err
 		}
@@ -142,7 +155,7 @@ func (t *SubnetID) UnmarshalCBOR(r io.Reader) error {
 
 	{
 
-		if err := t.Actor.UnmarshalCBOR(br); err != nil {
+		if err := t.Actor.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Actor: %w", err)
 		}
 

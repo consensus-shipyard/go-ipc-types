@@ -1,7 +1,5 @@
 package sdk
 
-//go:generate go run ./gen/gen.go
-
 import (
 	"path"
 	"path/filepath"
