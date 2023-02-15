@@ -30,7 +30,7 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.NetworkName (ipcsdk.SubnetID) (struct)
+	// t.NetworkName (sdk.SubnetID) (struct)
 	if err := t.NetworkName.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.NetworkName (ipcsdk.SubnetID) (struct)
+	// t.NetworkName (sdk.SubnetID) (struct)
 
 	{
 
@@ -499,7 +499,7 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.Source (ipcsdk.SubnetID) (struct)
+	// t.Source (sdk.SubnetID) (struct)
 	if err := t.Source.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -582,7 +582,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Source (ipcsdk.SubnetID) (struct)
+	// t.Source (sdk.SubnetID) (struct)
 
 	{
 
@@ -723,7 +723,7 @@ func (t *ChildCheck) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.Source (ipcsdk.SubnetID) (struct)
+	// t.Source (sdk.SubnetID) (struct)
 	if err := t.Source.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -755,7 +755,7 @@ func (t *ChildCheck) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Source (ipcsdk.SubnetID) (struct)
+	// t.Source (sdk.SubnetID) (struct)
 
 	{
 
@@ -792,12 +792,12 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.From (ipcsdk.SubnetID) (struct)
+	// t.From (sdk.SubnetID) (struct)
 	if err := t.From.MarshalCBOR(w); err != nil {
 		return err
 	}
 
-	// t.To (ipcsdk.SubnetID) (struct)
+	// t.To (sdk.SubnetID) (struct)
 	if err := t.To.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -839,7 +839,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.From (ipcsdk.SubnetID) (struct)
+	// t.From (sdk.SubnetID) (struct)
 
 	{
 
@@ -848,7 +848,7 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.To (ipcsdk.SubnetID) (struct)
+	// t.To (sdk.SubnetID) (struct)
 
 	{
 
@@ -908,12 +908,12 @@ func (t *StorableMsg) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.From (ipcsdk.IPCAddress) (struct)
+	// t.From (sdk.Address) (struct)
 	if err := t.From.MarshalCBOR(w); err != nil {
 		return err
 	}
 
-	// t.To (ipcsdk.IPCAddress) (struct)
+	// t.To (sdk.Address) (struct)
 	if err := t.To.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -961,7 +961,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.From (ipcsdk.IPCAddress) (struct)
+	// t.From (sdk.Address) (struct)
 
 	{
 
@@ -970,7 +970,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.To (ipcsdk.IPCAddress) (struct)
+	// t.To (sdk.Address) (struct)
 
 	{
 
@@ -1232,7 +1232,7 @@ func (t *CrossMsgParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Destination (ipcsdk.SubnetID) (struct)
+	// t.Destination (sdk.SubnetID) (struct)
 	if err := t.Destination.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -1266,7 +1266,7 @@ func (t *CrossMsgParams) UnmarshalCBOR(r io.Reader) error {
 		}
 
 	}
-	// t.Destination (ipcsdk.SubnetID) (struct)
+	// t.Destination (sdk.SubnetID) (struct)
 
 	{
 

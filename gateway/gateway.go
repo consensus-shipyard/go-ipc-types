@@ -5,7 +5,7 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
@@ -13,7 +13,7 @@ import (
 )
 
 type State struct {
-	NetworkName          ipcsdk.SubnetID
+	NetworkName          sdk.SubnetID
 	TotalSubnets         uint64
 	MinStake             abi.TokenAmount
 	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
@@ -28,20 +28,6 @@ type State struct {
 	AppliedTopdownNonce  uint64
 }
 
-type Subnet struct {
-	ID             ipcsdk.SubnetID
-	Stake          abi.TokenAmount
-	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
-	Nonce          uint64
-	CircSupply     abi.TokenAmount
-	Status         ipcsdk.Status
-	PrevCheckpoint Checkpoint
-}
-
-func (sn Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, error) {
-	return utils.GetOutOfArray[CrossMsg](sn.TopDownMsgs, s, nonce, CrossMsgsAMTBitwidth)
-}
-
 func GetTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, error) {
 	var out CrossMsg
 	found, err := crossMsgs.Get(nonce, &out)
@@ -54,7 +40,7 @@ func GetTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, error) {
 	return &out, nil
 }
 
-func (st *State) GetSubnet(s adt.Store, id ipcsdk.SubnetID) (*Subnet, error) {
+func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, error) {
 	key, err := abi.ParseUIntKey(id.String())
 	id.Bytes()
 	if err != nil {
@@ -78,7 +64,7 @@ func (st *State) GetBottomUpMsgMeta(s adt.Store, cID cid.Cid, nonce uint64) (*Cr
 	return utils.GetOutOfArray[CrossMsgMeta](cID, s, nonce, CrossMsgsAMTBitwidth)
 }
 
-func (st *State) GetTopDownMsg(s adt.Store, id ipcsdk.SubnetID, nonce uint64) (*CrossMsg, error) {
+func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*CrossMsg, error) {
 	sh, err := st.GetSubnet(s, id)
 	if err != nil {
 		return nil, err

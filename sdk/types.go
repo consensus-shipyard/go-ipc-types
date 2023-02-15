@@ -1,4 +1,4 @@
-package ipcsdk
+package sdk
 
 // Status defines the different states in which a subnet can be.
 type Status int64

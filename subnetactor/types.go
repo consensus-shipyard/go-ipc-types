@@ -1,7 +1,7 @@
 package subnetactor
 
 import (
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 )
@@ -16,7 +16,7 @@ type Validator struct {
 }
 
 type ConstructParams struct {
-	Parent            ipcsdk.SubnetID
+	Parent            sdk.SubnetID
 	Name              string
 	IpcGatewayAddr    uint64
 	Consensus         ConsensusType

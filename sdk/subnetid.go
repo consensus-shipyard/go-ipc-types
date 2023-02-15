@@ -1,4 +1,4 @@
-package ipcsdk
+package sdk
 
 //go:generate go run ./gen/gen.go
 

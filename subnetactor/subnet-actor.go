@@ -13,19 +13,19 @@ import (
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
 )
 
 type State struct {
 	Name              string
-	ParentID          ipcsdk.SubnetID
+	ParentID          sdk.SubnetID
 	IPCGatewayAddr    address.Address
 	Consensus         ConsensusType
 	MinValidatorStake abi.TokenAmount
 	TotalStake        abi.TokenAmount
 	Stake             cid.Cid // TCid<THamt<Cid,TokenAmount>>
-	Status            ipcsdk.Status
+	Status            sdk.Status
 	Genesis           []byte
 	FinalityThreshold abi.ChainEpoch
 	CheckPeriod       abi.ChainEpoch

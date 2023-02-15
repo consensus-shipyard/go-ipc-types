@@ -1,18 +1,35 @@
 package gateway
 
 import (
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
+	"github.com/consensus-shipyard/go-ipc-types/utils"
 )
 
 // ManifestID is the id used to index the gateway actor
 // in the builtin-actors bundle.
 const ManifestID = "ipc_gateway"
 
+type Subnet struct {
+	ID             sdk.SubnetID
+	Stake          abi.TokenAmount
+	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
+	Nonce          uint64
+	CircSupply     abi.TokenAmount
+	Status         sdk.Status
+	PrevCheckpoint Checkpoint
+}
+
+func (sn Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, error) {
+	return utils.GetOutOfArray[CrossMsg](sn.TopDownMsgs, s, nonce, CrossMsgsAMTBitwidth)
+}
+
 type StorableMsg struct {
-	From   ipcsdk.IPCAddress
-	To     ipcsdk.IPCAddress
+	From   sdk.Address
+	To     sdk.Address
 	Method abi.MethodNum
 	Params RawBytes
 	Value  abi.TokenAmount
@@ -22,7 +39,7 @@ type StorableMsg struct {
 func (sm *StorableMsg) IPCType() IPCMsgType {
 	toSubnetID := sm.To.SubnetID
 	fromSubnetID := sm.From.SubnetID
-	if ipcsdk.IsBottomup(fromSubnetID, toSubnetID) {
+	if sdk.IsBottomup(fromSubnetID, toSubnetID) {
 		return IPCMsgTypeBottomUp
 	}
 	return IPCMsgTypeTopDown
@@ -56,7 +73,7 @@ type FundParams struct {
 
 type CrossMsgParams struct {
 	CrossMsg    CrossMsg
-	Destination ipcsdk.SubnetID
+	Destination sdk.SubnetID
 }
 
 type ApplyMsgParams struct {
@@ -75,7 +92,7 @@ type Checkpoint struct {
 	Sig  []byte
 }
 
-func (c *Checkpoint) CrossMsgMeta(from, to *ipcsdk.SubnetID) (*CrossMsgMeta, bool) {
+func (c *Checkpoint) CrossMsgMeta(from, to *sdk.SubnetID) (*CrossMsgMeta, bool) {
 	for i, m := range c.Data.CrossMsgs {
 		if *from == m.From && *to == m.To {
 			return &c.Data.CrossMsgs[i], true
@@ -84,7 +101,7 @@ func (c *Checkpoint) CrossMsgMeta(from, to *ipcsdk.SubnetID) (*CrossMsgMeta, boo
 	return nil, false
 }
 
-func (s *Checkpoint) CrossMsgMetaIndex(from, to *ipcsdk.SubnetID) (int, bool) {
+func (s *Checkpoint) CrossMsgMetaIndex(from, to *sdk.SubnetID) (int, bool) {
 	for i, m := range s.Data.CrossMsgs {
 		if *from == m.From && *to == m.To {
 			return i, true
@@ -103,7 +120,7 @@ func WindowEpoch(epoch, period abi.ChainEpoch) abi.ChainEpoch {
 }
 
 type CheckData struct {
-	Source    ipcsdk.SubnetID
+	Source    sdk.SubnetID
 	TipSet    []byte
 	Epoch     abi.ChainEpoch
 	PrevCheck cid.Cid // TCid<TLink<Checkpoint>>
@@ -112,13 +129,13 @@ type CheckData struct {
 }
 
 type ChildCheck struct {
-	Source ipcsdk.SubnetID
+	Source sdk.SubnetID
 	Checks cid.Cid // Vec<TCid<TLink<Checkpoint>>>,
 }
 
 type CrossMsgMeta struct {
-	From    ipcsdk.SubnetID
-	To      ipcsdk.SubnetID
+	From    sdk.SubnetID
+	To      sdk.SubnetID
 	MsgsCID cid.Cid // TCid<TLink<CrossMsgs>>,
 	Nonce   uint64
 	Value   abi.TokenAmount

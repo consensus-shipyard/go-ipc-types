@@ -7,7 +7,7 @@ import (
 	"io"
 	"sort"
 
-	ipcsdk "github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
 	address "github.com/filecoin-project/go-address"
 	abi "github.com/filecoin-project/go-state-types/abi"
 	cid "github.com/ipfs/go-cid"
@@ -44,7 +44,7 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.ParentID (ipcsdk.SubnetID) (struct)
+	// t.ParentID (sdk.SubnetID) (struct)
 	if err := t.ParentID.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("failed to write cid field t.Stake: %w", err)
 	}
 
-	// t.Status (ipcsdk.Status) (int64)
+	// t.Status (sdk.Status) (int64)
 	if t.Status >= 0 {
 		if err := cbg.WriteMajorTypeHeaderBuf(scratch, w, cbg.MajUnsignedInt, uint64(t.Status)); err != nil {
 			return err
@@ -190,7 +190,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 
 		t.Name = string(sval)
 	}
-	// t.ParentID (ipcsdk.SubnetID) (struct)
+	// t.ParentID (sdk.SubnetID) (struct)
 
 	{
 
@@ -263,7 +263,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 		t.Stake = c
 
 	}
-	// t.Status (ipcsdk.Status) (int64)
+	// t.Status (sdk.Status) (int64)
 	{
 		maj, extra, err := cbg.CborReadHeaderBuf(br, scratch)
 		var extraI int64
@@ -286,7 +286,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) error {
 			return fmt.Errorf("wrong type for int64 field: %d", maj)
 		}
 
-		t.Status = ipcsdk.Status(extraI)
+		t.Status = sdk.Status(extraI)
 	}
 	// t.Genesis ([]uint8) (slice)
 
@@ -442,7 +442,7 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 
 	scratch := make([]byte, 9)
 
-	// t.Parent (ipcsdk.SubnetID) (struct)
+	// t.Parent (sdk.SubnetID) (struct)
 	if err := t.Parent.MarshalCBOR(w); err != nil {
 		return err
 	}
@@ -542,7 +542,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) error {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Parent (ipcsdk.SubnetID) (struct)
+	// t.Parent (sdk.SubnetID) (struct)
 
 	{
 
