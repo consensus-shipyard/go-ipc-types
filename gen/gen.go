@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
-	"github.com/consensus-shipyard/go-ipc-types/ipcsdk"
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
 	gen "github.com/whyrusleeping/cbor-gen"
 )
@@ -39,9 +39,9 @@ func main() {
 	}
 
 	// sdk types
-	if err := gen.WriteTupleEncodersToFile("./ipcsdk/cbor_gen.go", "ipcsdk",
-		ipcsdk.IPCAddress{},
-		ipcsdk.SubnetID{},
+	if err := gen.WriteTupleEncodersToFile("./sdk/cbor_gen.go", "sdk",
+		sdk.IPCAddress{},
+		sdk.SubnetID{},
 	); err != nil {
 		panic(err)
 	}
