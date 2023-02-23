@@ -115,24 +115,6 @@ func (c *Checkpoint) Cid() (cid.Cid, error) {
 	return cid.NewCidV1(abi.CidBuilder.GetCodec(), h), nil
 }
 
-func (c *Checkpoint) CrossMsgMeta(from, to *sdk.SubnetID) (*CrossMsgMeta, bool) {
-	for i, m := range c.Data.CrossMsgs {
-		if *from == m.From && *to == m.To {
-			return &c.Data.CrossMsgs[i], true
-		}
-	}
-	return nil, false
-}
-
-func (c *Checkpoint) CrossMsgMetaIndex(from, to *sdk.SubnetID) (int, bool) {
-	for i, m := range c.Data.CrossMsgs {
-		if *from == m.From && *to == m.To {
-			return i, true
-		}
-	}
-	return 0, false
-}
-
 func CheckpointEpoch(epoch, period abi.ChainEpoch) abi.ChainEpoch {
 	return (epoch / period) * period
 }

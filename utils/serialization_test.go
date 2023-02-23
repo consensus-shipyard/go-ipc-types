@@ -25,7 +25,7 @@ func TestCborSerialization(t *testing.T) {
 	params := subnetactor.ConstructParams{
 		Parent:            sdk.RootSubnet,
 		Name:              "test",
-		IpcGatewayAddr:    64,
+		IPCGatewayAddr:    64,
 		CheckPeriod:       0,
 		FinalityThreshold: 0,
 		MinValidators:     0,

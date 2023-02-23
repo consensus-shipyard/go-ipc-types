@@ -452,9 +452,9 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.IpcGatewayAddr (uint64) (uint64)
+	// t.IPCGatewayAddr (uint64) (uint64)
 
-	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.IpcGatewayAddr)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.IPCGatewayAddr)); err != nil {
 		return err
 	}
 
@@ -554,7 +554,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 
 		t.Name = string(sval)
 	}
-	// t.IpcGatewayAddr (uint64) (uint64)
+	// t.IPCGatewayAddr (uint64) (uint64)
 
 	{
 
@@ -565,7 +565,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 		if maj != cbg.MajUnsignedInt {
 			return fmt.Errorf("wrong type for uint64 field")
 		}
-		t.IpcGatewayAddr = uint64(extra)
+		t.IPCGatewayAddr = uint64(extra)
 
 	}
 	// t.Consensus (subnetactor.ConsensusType) (uint64)
