@@ -31,7 +31,7 @@ func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, err
 }
 
 // GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted
-// yet, and empty template is provided.
+// yet, an empty template is provided.
 //
 // NOTE: This function doesn't check if a template from the future is being requested.
 func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*Checkpoint, error) {
