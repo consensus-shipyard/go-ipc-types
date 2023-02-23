@@ -34,6 +34,10 @@ var UndefSubnetID = SubnetID{
 	Actor:  id0,
 }
 
+func (id SubnetID) Key() string {
+	return id.String()
+}
+
 func NewSubnetIDFromString(addr string) (SubnetID, error) {
 	var out SubnetID
 	if addr == RootSubnet.String() {
@@ -58,9 +62,8 @@ func NewSubnetID(parent SubnetID, subnetAct address.Address) SubnetID {
 	}
 }
 
-func (s SubnetID) Bytes() []byte {
-	strID := s.String()
-	return []byte(strID)
+func (id SubnetID) Bytes() []byte {
+	return []byte(id.String())
 }
 
 // String returns the id in string form.

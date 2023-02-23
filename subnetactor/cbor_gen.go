@@ -57,15 +57,10 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Consensus (subnetactor.ConsensusType) (int64)
-	if t.Consensus >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Consensus)); err != nil {
-			return err
-		}
-	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Consensus-1)); err != nil {
-			return err
-		}
+	// t.Consensus (subnetactor.ConsensusType) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Consensus)); err != nil {
+		return err
 	}
 
 	// t.MinValidatorStake (big.Int) (struct)
@@ -216,30 +211,19 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 	}
-	// t.Consensus (subnetactor.ConsensusType) (int64)
+	// t.Consensus (subnetactor.ConsensusType) (uint64)
+
 	{
-		maj, extra, err := cr.ReadHeader()
-		var extraI int64
+
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
-		switch maj {
-		case cbg.MajUnsignedInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 positive overflow")
-			}
-		case cbg.MajNegativeInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 negative oveflow")
-			}
-			extraI = -1 - extraI
-		default:
-			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
 		}
+		t.Consensus = ConsensusType(extra)
 
-		t.Consensus = ConsensusType(extraI)
 	}
 	// t.MinValidatorStake (big.Int) (struct)
 
@@ -474,15 +458,10 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Consensus (subnetactor.ConsensusType) (int64)
-	if t.Consensus >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Consensus)); err != nil {
-			return err
-		}
-	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Consensus-1)); err != nil {
-			return err
-		}
+	// t.Consensus (subnetactor.ConsensusType) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Consensus)); err != nil {
+		return err
 	}
 
 	// t.MinValidatorStake (big.Int) (struct)
@@ -589,30 +568,19 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 		t.IpcGatewayAddr = uint64(extra)
 
 	}
-	// t.Consensus (subnetactor.ConsensusType) (int64)
+	// t.Consensus (subnetactor.ConsensusType) (uint64)
+
 	{
-		maj, extra, err := cr.ReadHeader()
-		var extraI int64
+
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
-		switch maj {
-		case cbg.MajUnsignedInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 positive overflow")
-			}
-		case cbg.MajNegativeInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 negative oveflow")
-			}
-			extraI = -1 - extraI
-		default:
-			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
 		}
+		t.Consensus = ConsensusType(extra)
 
-		t.Consensus = ConsensusType(extraI)
 	}
 	// t.MinValidatorStake (big.Int) (struct)
 

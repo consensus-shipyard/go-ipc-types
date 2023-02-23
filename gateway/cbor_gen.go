@@ -8,6 +8,7 @@ import (
 	"math"
 	"sort"
 
+	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
 	abi "github.com/filecoin-project/go-state-types/abi"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
@@ -1067,6 +1068,178 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for uint64 field")
 		}
 		t.Nonce = uint64(extra)
+
+	}
+	return nil
+}
+
+var lengthBufSubnet = []byte{135}
+
+func (t *Subnet) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufSubnet); err != nil {
+		return err
+	}
+
+	// t.ID (sdk.SubnetID) (struct)
+	if err := t.ID.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.Stake (big.Int) (struct)
+	if err := t.Stake.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.TopDownMsgs (cid.Cid) (struct)
+
+	if err := cbg.WriteCid(cw, t.TopDownMsgs); err != nil {
+		return xerrors.Errorf("failed to write cid field t.TopDownMsgs: %w", err)
+	}
+
+	// t.Nonce (uint64) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Nonce)); err != nil {
+		return err
+	}
+
+	// t.CircSupply (big.Int) (struct)
+	if err := t.CircSupply.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.Status (sdk.Status) (int64)
+	if t.Status >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Status)); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.Status-1)); err != nil {
+			return err
+		}
+	}
+
+	// t.PrevCheckpoint (gateway.Checkpoint) (struct)
+	if err := t.PrevCheckpoint.MarshalCBOR(cw); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = Subnet{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 7 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.ID (sdk.SubnetID) (struct)
+
+	{
+
+		if err := t.ID.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.ID: %w", err)
+		}
+
+	}
+	// t.Stake (big.Int) (struct)
+
+	{
+
+		if err := t.Stake.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Stake: %w", err)
+		}
+
+	}
+	// t.TopDownMsgs (cid.Cid) (struct)
+
+	{
+
+		c, err := cbg.ReadCid(cr)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.TopDownMsgs: %w", err)
+		}
+
+		t.TopDownMsgs = c
+
+	}
+	// t.Nonce (uint64) (uint64)
+
+	{
+
+		maj, extra, err = cr.ReadHeader()
+		if err != nil {
+			return err
+		}
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
+		}
+		t.Nonce = uint64(extra)
+
+	}
+	// t.CircSupply (big.Int) (struct)
+
+	{
+
+		if err := t.CircSupply.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.CircSupply: %w", err)
+		}
+
+	}
+	// t.Status (sdk.Status) (int64)
+	{
+		maj, extra, err := cr.ReadHeader()
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.Status = sdk.Status(extraI)
+	}
+	// t.PrevCheckpoint (gateway.Checkpoint) (struct)
+
+	{
+
+		if err := t.PrevCheckpoint.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.PrevCheckpoint: %w", err)
+		}
 
 	}
 	return nil

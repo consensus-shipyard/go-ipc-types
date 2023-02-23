@@ -17,6 +17,7 @@ func main() {
 		gateway.ChildCheck{},
 		gateway.CrossMsgMeta{},
 		gateway.StorableMsg{},
+		gateway.Subnet{},
 		gateway.RawBytes{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},

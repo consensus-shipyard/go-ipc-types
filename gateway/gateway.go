@@ -8,6 +8,7 @@ import (
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
+	xerrors "golang.org/x/xerrors"
 )
 
 type State struct {
@@ -38,37 +39,32 @@ func GetTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, error) {
 	return &out, nil
 }
 
-func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, error) {
-	key, err := abi.ParseUIntKey(id.String())
-	id.Bytes()
-	if err != nil {
-		return nil, err
-	}
-	subnet, err := utils.GetOutOfHamt[Subnet](st.Subnets, s, abi.UIntKey(key))
-	return subnet, err
+func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) {
+	return utils.GetOutOfHamt[Subnet](st.Subnets, s, id)
 }
 
-func (st *State) GetCheckpoints(s adt.Store, c abi.ChainEpoch) (*Checkpoint, error) {
-	checkpoint, err := utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, abi.UIntKey(uint64(c)))
-	return checkpoint, err
+func (st *State) GetCheckpoints(s adt.Store, c abi.ChainEpoch) (*Checkpoint, bool, error) {
+	return utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, abi.UIntKey(uint64(c)))
 }
 
-func (st *State) GetCrossMsgs(s adt.Store, cID cid.Cid) (*CrossMsgs, error) {
-	crossMsgs, err := utils.GetOutOfHamt[CrossMsgs](st.Checkpoints, s, abi.CidKey(cID))
-	return crossMsgs, err
+func (st *State) GetCrossMsgs(s adt.Store, cID cid.Cid) (*CrossMsgs, bool, error) {
+	return utils.GetOutOfHamt[CrossMsgs](st.Checkpoints, s, abi.CidKey(cID))
 }
 
-func (st *State) GetBottomUpMsgMeta(s adt.Store, cID cid.Cid, nonce uint64) (*CrossMsgMeta, error) {
+func (st *State) GetBottomUpMsgMeta(s adt.Store, cID cid.Cid, nonce uint64) (*CrossMsgMeta, bool, error) {
 	return utils.GetOutOfArray[CrossMsgMeta](cID, s, nonce, CrossMsgsAMTBitwidth)
 }
 
 func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*CrossMsg, error) {
-	sh, err := st.GetSubnet(s, id)
+	sh, found, err := st.GetSubnet(s, id)
 	if err != nil {
 		return nil, err
 	}
-	CrossMsg, err := sh.GetTopDownMsg(s, nonce)
-	return CrossMsg, err
+	if !found {
+		return nil, xerrors.Errorf("subnet with id %s not found", id)
+	}
+	crossMsg, _, err := sh.GetTopDownMsg(s, nonce)
+	return crossMsg, err
 }
 
 // BottomUpMsgFromNonce gets the latest bottomUpMetas from a specific nonce
@@ -81,7 +77,7 @@ func (st *State) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMet
 		return nil, err
 	}
 	for i := nonce; i < st.BottomupNonce; i++ {
-		meta, err := utils.GetOutOfAdtArray[CrossMsgMeta](adtArray, i)
+		meta, _, err := utils.GetOutOfAdtArray[CrossMsgMeta](adtArray, i)
 		if err != nil {
 			return nil, err
 		}

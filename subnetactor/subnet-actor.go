@@ -33,24 +33,19 @@ type State struct {
 	MinValidators     uint64
 }
 
-func (st *State) GetStake(s adt.Store, id address.Address) (*abi.TokenAmount, error) {
-	tokenAmount, err := utils.GetOutOfHamt[abi.TokenAmount](st.Stake, s, abi.AddrKey(id))
-	return tokenAmount, err
+func (st *State) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, error) {
+	out, found, err := utils.GetOutOfHamt[abi.TokenAmount](st.Stake, s, abi.AddrKey(id))
+	if err != nil {
+		return abi.NewTokenAmount(0), err
+	}
+	if !found {
+		return abi.NewTokenAmount(0), err
+	}
+	return *out, err
 }
 
-func (st *State) GetCheckpoint(s adt.Store, id address.Address) (*gateway.Checkpoint, error) {
-	checkpoint, err := utils.GetOutOfHamt[gateway.Checkpoint](st.Stake, s, abi.AddrKey(id))
-	return checkpoint, err
-}
-
-func (st *State) GetWindowCheck(s adt.Store, id address.Address) (*Votes, error) {
-	votes, err := utils.GetOutOfHamt[Votes](st.Stake, s, abi.AddrKey(id))
-	return votes, err
-}
-
-func (st *State) GetCrossMsgs(s adt.Store, c cid.Cid) (*gateway.CrossMsgs, error) {
-	crossMsgs, err := utils.GetOutOfHamt[gateway.CrossMsgs](st.Stake, s, abi.CidKey(c))
-	return crossMsgs, err
+func (st *State) GetCheckpoint(s adt.Store, id address.Address) (*gateway.Checkpoint, bool, error) {
+	return utils.GetOutOfHamt[gateway.Checkpoint](st.Stake, s, abi.AddrKey(id))
 }
 
 func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {
@@ -60,7 +55,7 @@ func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		sum = big.Sum(sum, *stake)
+		sum = big.Sum(sum, stake)
 	}
 	fsum := new(mbig.Rat).SetInt(sum.Int)
 	fTotal := new(mbig.Rat).SetInt(st.TotalStake.Int)

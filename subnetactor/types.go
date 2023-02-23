@@ -37,7 +37,7 @@ type Votes struct {
 
 // ConsensusType defines the types of consensus supported
 // by subnets.
-type ConsensusType int64
+type ConsensusType uint64
 
 const (
 	Delegated ConsensusType = iota
