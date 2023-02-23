@@ -119,7 +119,7 @@ func NewCheckpoint(id sdk.SubnetID, epoch abi.ChainEpoch) *Checkpoint {
 
 func (c *Checkpoint) Cid() (cid.Cid, error) {
 	buf := new(bytes.Buffer)
-	if err := c.MarshalCBOR(buf); err != nil {
+	if err := c.Data.MarshalCBOR(buf); err != nil {
 		return cid.Undef, err
 	}
 	h, err := mh.Sum(buf.Bytes(), abi.HashFunction, -1)
