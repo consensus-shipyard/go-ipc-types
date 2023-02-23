@@ -16,7 +16,7 @@ import (
 // TestCborSerialization cbor-serializes a specific type and prints in a log
 // the hex representation of the serialization.
 //
-// This is really helpful when debuggin the serialization interop between Go
+// This is really helpful when debugging the serialization interop between Go
 // and Rust, as the serialization can be input in tools like https://cbor.me/
 // to inspect the result that was actually serialized.
 // This is an example with subnetactor.ConstructParams, but it can be done
@@ -25,7 +25,7 @@ func TestCborSerialization(t *testing.T) {
 	params := subnetactor.ConstructParams{
 		Parent:            sdk.RootSubnet,
 		Name:              "test",
-		IpcGatewayAddr:    64,
+		IPCGatewayAddr:    64,
 		CheckPeriod:       0,
 		FinalityThreshold: 0,
 		MinValidators:     0,

@@ -1,10 +1,11 @@
 package main
 
 import (
+	gen "github.com/whyrusleeping/cbor-gen"
+
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
-	gen "github.com/whyrusleeping/cbor-gen"
 )
 
 func main() {
@@ -17,6 +18,7 @@ func main() {
 		gateway.ChildCheck{},
 		gateway.CrossMsgMeta{},
 		gateway.StorableMsg{},
+		gateway.Subnet{},
 		gateway.RawBytes{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},

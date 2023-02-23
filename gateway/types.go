@@ -1,9 +1,13 @@
 package gateway
 
 import (
+	"bytes"
+
+	"github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
+
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
 
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
@@ -23,7 +27,7 @@ type Subnet struct {
 	PrevCheckpoint Checkpoint
 }
 
-func (sn Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, error) {
+func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {
 	return utils.GetOutOfArray[CrossMsg](sn.TopDownMsgs, s, nonce, CrossMsgsAMTBitwidth)
 }
 
@@ -39,7 +43,7 @@ type StorableMsg struct {
 func (sm *StorableMsg) IPCType() IPCMsgType {
 	toSubnetID := sm.To.SubnetID
 	fromSubnetID := sm.From.SubnetID
-	if sdk.IsBottomup(fromSubnetID, toSubnetID) {
+	if sdk.IsBottomUp(fromSubnetID, toSubnetID) {
 		return IPCMsgTypeBottomUp
 	}
 	return IPCMsgTypeTopDown
@@ -92,22 +96,23 @@ type Checkpoint struct {
 	Sig  []byte
 }
 
-func (c *Checkpoint) CrossMsgMeta(from, to *sdk.SubnetID) (*CrossMsgMeta, bool) {
-	for i, m := range c.Data.CrossMsgs {
-		if *from == m.From && *to == m.To {
-			return &c.Data.CrossMsgs[i], true
-		}
+func NewCheckpoint(id sdk.SubnetID, epoch abi.ChainEpoch) *Checkpoint {
+	return &Checkpoint{
+		Data: CheckData{Source: id, Epoch: epoch},
 	}
-	return nil, false
 }
 
-func (s *Checkpoint) CrossMsgMetaIndex(from, to *sdk.SubnetID) (int, bool) {
-	for i, m := range s.Data.CrossMsgs {
-		if *from == m.From && *to == m.To {
-			return i, true
-		}
+func (c *Checkpoint) Cid() (cid.Cid, error) {
+	buf := new(bytes.Buffer)
+	if err := c.Data.MarshalCBOR(buf); err != nil {
+		return cid.Undef, err
 	}
-	return 0, false
+	h, err := mh.Sum(buf.Bytes(), abi.HashFunction, -1)
+	if err != nil {
+		return cid.Undef, err
+	}
+
+	return cid.NewCidV1(abi.CidBuilder.GetCodec(), h), nil
 }
 
 func CheckpointEpoch(epoch, period abi.ChainEpoch) abi.ChainEpoch {

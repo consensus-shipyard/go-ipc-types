@@ -1,9 +1,10 @@
 package subnetactor
 
 import (
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 )
 
 // ManifestID is the id used to index the gateway actor
@@ -18,7 +19,7 @@ type Validator struct {
 type ConstructParams struct {
 	Parent            sdk.SubnetID
 	Name              string
-	IpcGatewayAddr    uint64
+	IPCGatewayAddr    uint64
 	Consensus         ConsensusType
 	MinValidatorStake abi.TokenAmount
 	MinValidators     uint64
@@ -37,7 +38,7 @@ type Votes struct {
 
 // ConsensusType defines the types of consensus supported
 // by subnets.
-type ConsensusType int64
+type ConsensusType uint64
 
 const (
 	Delegated ConsensusType = iota

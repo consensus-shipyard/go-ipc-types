@@ -3,11 +3,14 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
-	"github.com/consensus-shipyard/go-ipc-types/utils"
+	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
+
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
+	"github.com/consensus-shipyard/go-ipc-types/utils"
 )
 
 type State struct {
@@ -16,9 +19,9 @@ type State struct {
 	MinStake             abi.TokenAmount
 	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
 	CheckPeriod          abi.ChainEpoch
-	Checkpoints          cid.Cid //TCid<THamt<ChainEpoch, Checkpoint>>
-	CheckMsgRegistry     cid.Cid //TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
-	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>;
+	Checkpoints          cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
+	CheckMsgRegistry     cid.Cid // TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
+	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>
 	Nonce                uint64
 	BottomupNonce        uint64
 	BottomupMsgMeta      cid.Cid // TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
@@ -38,37 +41,32 @@ func GetTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, error) {
 	return &out, nil
 }
 
-func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, error) {
-	key, err := abi.ParseUIntKey(id.String())
-	id.Bytes()
-	if err != nil {
-		return nil, err
-	}
-	subnet, err := utils.GetOutOfHamt[Subnet](st.Subnets, s, abi.UIntKey(key))
-	return subnet, err
+func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) {
+	return utils.GetOutOfHamt[Subnet](st.Subnets, s, id)
 }
 
-func (st *State) GetCheckpoints(s adt.Store, c abi.ChainEpoch) (*Checkpoint, error) {
-	checkpoint, err := utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, abi.UIntKey(uint64(c)))
-	return checkpoint, err
+func (st *State) GetCheckpoints(s adt.Store, c abi.ChainEpoch) (*Checkpoint, bool, error) {
+	return utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, abi.UIntKey(uint64(c)))
 }
 
-func (st *State) GetCrossMsgs(s adt.Store, cID cid.Cid) (*CrossMsgs, error) {
-	crossMsgs, err := utils.GetOutOfHamt[CrossMsgs](st.Checkpoints, s, abi.CidKey(cID))
-	return crossMsgs, err
+func (st *State) GetCrossMsgs(s adt.Store, cID cid.Cid) (*CrossMsgs, bool, error) {
+	return utils.GetOutOfHamt[CrossMsgs](st.Checkpoints, s, abi.CidKey(cID))
 }
 
-func (st *State) GetBottomUpMsgMeta(s adt.Store, cID cid.Cid, nonce uint64) (*CrossMsgMeta, error) {
+func (st *State) GetBottomUpMsgMeta(s adt.Store, cID cid.Cid, nonce uint64) (*CrossMsgMeta, bool, error) {
 	return utils.GetOutOfArray[CrossMsgMeta](cID, s, nonce, CrossMsgsAMTBitwidth)
 }
 
 func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*CrossMsg, error) {
-	sh, err := st.GetSubnet(s, id)
+	sh, found, err := st.GetSubnet(s, id)
 	if err != nil {
 		return nil, err
 	}
-	CrossMsg, err := sh.GetTopDownMsg(s, nonce)
-	return CrossMsg, err
+	if !found {
+		return nil, xerrors.Errorf("subnet with id %s not found", id)
+	}
+	crossMsg, _, err := sh.GetTopDownMsg(s, nonce)
+	return crossMsg, err
 }
 
 // BottomUpMsgFromNonce gets the latest bottomUpMetas from a specific nonce
@@ -81,7 +79,7 @@ func (st *State) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMet
 		return nil, err
 	}
 	for i := nonce; i < st.BottomupNonce; i++ {
-		meta, err := utils.GetOutOfAdtArray[CrossMsgMeta](adtArray, i)
+		meta, _, err := utils.GetOutOfAdtArray[CrossMsgMeta](adtArray, i)
 		if err != nil {
 			return nil, err
 		}
@@ -90,4 +88,20 @@ func (st *State) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMet
 		}
 	}
 	return out, nil
+}
+
+// GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted
+// yet, an empty template is provided.
+//
+// NOTE: This function doesn't check if a template from the future is being requested.
+func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*Checkpoint, error) {
+	ch, found, err := utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s,
+		abi.UIntKey(uint64(CheckpointEpoch(epoch, st.CheckPeriod))))
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return NewCheckpoint(st.NetworkName, epoch), nil
+	}
+	return ch, nil
 }
