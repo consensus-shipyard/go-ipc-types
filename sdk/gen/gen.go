@@ -1,8 +1,9 @@
 package main
 
 import (
-	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
 	gen "github.com/whyrusleeping/cbor-gen"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 )
 
 func main() {

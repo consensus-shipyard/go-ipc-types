@@ -71,9 +71,8 @@ func (id SubnetID) String() string {
 	if id == RootSubnet {
 		if id.Parent != UndefStr {
 			return RootStr
-		} else {
-			return UndefStr
 		}
+		return UndefStr
 	}
 	return filepath.Join(id.Parent, id.Actor.String())
 }
@@ -152,7 +151,7 @@ func (id SubnetID) Up(curr SubnetID) SubnetID {
 	return sn
 }
 
-func IsBottomup(from SubnetID, to SubnetID) bool {
+func IsBottomUp(from SubnetID, to SubnetID) bool {
 	subnetID, index := from.CommonParent(to)
 	if subnetID == UndefSubnetID {
 		return false

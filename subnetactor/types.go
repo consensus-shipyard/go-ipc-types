@@ -1,9 +1,10 @@
 package subnetactor
 
 import (
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 )
 
 // ManifestID is the id used to index the gateway actor

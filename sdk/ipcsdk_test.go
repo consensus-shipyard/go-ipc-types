@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/stretchr/testify/require"
 
 	"github.com/filecoin-project/go-address"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
 )
 
 func init() {
@@ -66,7 +67,7 @@ func TestCborMarshal(t *testing.T) {
 func TestHAddress(t *testing.T) {
 	address.CurrentNetwork = address.Mainnet
 	id, _ := address.NewIDAddress(1000)
-	a := sdk.IPCAddress{sdk.RootSubnet, id}
+	a := sdk.IPCAddress{SubnetID: sdk.RootSubnet, RawAddress: id}
 
 	sn := a.SubnetID
 	require.Equal(t, sdk.RootSubnet, sn)
@@ -131,6 +132,6 @@ func testParentAndBottomUp(t *testing.T, from, to, parent string, exl int, botto
 	require.NoError(t, err)
 	require.Equal(t, p, sparent)
 	require.Equal(t, exl, l)
-	require.Equal(t, sdk.IsBottomup(sFrom, sTo), bottomup)
+	require.Equal(t, sdk.IsBottomUp(sFrom, sTo), bottomup)
 
 }

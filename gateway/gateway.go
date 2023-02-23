@@ -3,12 +3,14 @@ package gateway
 import (
 	"fmt"
 
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
-	"github.com/consensus-shipyard/go-ipc-types/utils"
+	"github.com/ipfs/go-cid"
+	"golang.org/x/xerrors"
+
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
-	"github.com/ipfs/go-cid"
-	xerrors "golang.org/x/xerrors"
+
+	"github.com/consensus-shipyard/go-ipc-types/sdk"
+	"github.com/consensus-shipyard/go-ipc-types/utils"
 )
 
 type State struct {
@@ -17,9 +19,9 @@ type State struct {
 	MinStake             abi.TokenAmount
 	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
 	CheckPeriod          abi.ChainEpoch
-	Checkpoints          cid.Cid //TCid<THamt<ChainEpoch, Checkpoint>>
-	CheckMsgRegistry     cid.Cid //TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
-	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>;
+	Checkpoints          cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
+	CheckMsgRegistry     cid.Cid // TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>
+	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>
 	Nonce                uint64
 	BottomupNonce        uint64
 	BottomupMsgMeta      cid.Cid // TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
@@ -86,4 +88,20 @@ func (st *State) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMet
 		}
 	}
 	return out, nil
+}
+
+// GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted
+// yet, an empty template is provided.
+//
+// NOTE: This function doesn't check if a template from the future is being requested.
+func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*Checkpoint, error) {
+	ch, found, err := utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s,
+		abi.UIntKey(uint64(CheckpointEpoch(epoch, st.CheckPeriod))))
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return NewCheckpoint(st.NetworkName, epoch), nil
+	}
+	return ch, nil
 }

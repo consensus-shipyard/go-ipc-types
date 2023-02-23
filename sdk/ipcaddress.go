@@ -11,7 +11,7 @@ import (
 // undefined IPC address
 var UndefIPCAddress = IPCAddress{}
 
-// Address adds subnet information to raw Filecoin addresses
+// IPCAddress adds subnet information to raw Filecoin addresses
 type IPCAddress struct {
 	SubnetID   SubnetID
 	RawAddress address.Address

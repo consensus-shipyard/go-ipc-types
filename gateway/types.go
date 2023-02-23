@@ -3,10 +3,11 @@ package gateway
 import (
 	"bytes"
 
-	"github.com/filecoin-project/go-state-types/abi"
-	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
+
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
@@ -30,22 +31,6 @@ func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, err
 	return utils.GetOutOfArray[CrossMsg](sn.TopDownMsgs, s, nonce, CrossMsgsAMTBitwidth)
 }
 
-// GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted
-// yet, an empty template is provided.
-//
-// NOTE: This function doesn't check if a template from the future is being requested.
-func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*Checkpoint, error) {
-	ch, found, err := utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s,
-		abi.UIntKey(uint64(CheckpointEpoch(epoch, st.CheckPeriod))))
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return NewCheckpoint(st.NetworkName, epoch), nil
-	}
-	return ch, nil
-}
-
 type StorableMsg struct {
 	From   sdk.IPCAddress
 	To     sdk.IPCAddress
@@ -58,7 +43,7 @@ type StorableMsg struct {
 func (sm *StorableMsg) IPCType() IPCMsgType {
 	toSubnetID := sm.To.SubnetID
 	fromSubnetID := sm.From.SubnetID
-	if sdk.IsBottomup(fromSubnetID, toSubnetID) {
+	if sdk.IsBottomUp(fromSubnetID, toSubnetID) {
 		return IPCMsgTypeBottomUp
 	}
 	return IPCMsgTypeTopDown
@@ -139,8 +124,8 @@ func (c *Checkpoint) CrossMsgMeta(from, to *sdk.SubnetID) (*CrossMsgMeta, bool) 
 	return nil, false
 }
 
-func (s *Checkpoint) CrossMsgMetaIndex(from, to *sdk.SubnetID) (int, bool) {
-	for i, m := range s.Data.CrossMsgs {
+func (c *Checkpoint) CrossMsgMetaIndex(from, to *sdk.SubnetID) (int, bool) {
+	for i, m := range c.Data.CrossMsgs {
 		if *from == m.From && *to == m.To {
 			return i, true
 		}

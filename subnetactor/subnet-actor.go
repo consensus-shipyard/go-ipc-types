@@ -62,5 +62,4 @@ func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {
 	div := new(mbig.Rat).SetFrac(fsum.Num(), fTotal.Num())
 	threshold := utils.MajorityThreshold()
 	return div.Cmp(&threshold) >= 0, nil
-
 }
