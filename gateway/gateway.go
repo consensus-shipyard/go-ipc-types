@@ -7,6 +7,7 @@ import (
 	"golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/builtin"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
@@ -104,4 +105,20 @@ func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*Checkp
 		return NewCheckpoint(st.NetworkName, epoch), nil
 	}
 	return ch, nil
+}
+
+// ListSubnets lists subnets registered in the gateway
+func (st *State) ListSubnets(s adt.Store) ([]Subnet, error) {
+	subnetMap, err := adt.AsMap(s, st.Subnets, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, err
+	}
+
+	var sh Subnet
+	var out []Subnet
+	err = subnetMap.ForEach(&sh, func(k string) error {
+		out = append(out, sh)
+		return nil
+	})
+	return out, err
 }
