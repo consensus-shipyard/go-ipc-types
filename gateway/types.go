@@ -126,7 +126,7 @@ func WindowEpoch(epoch, period abi.ChainEpoch) abi.ChainEpoch {
 
 type CheckData struct {
 	Source    sdk.SubnetID
-	TipSet    []byte
+	Proof     []byte
 	Epoch     abi.ChainEpoch
 	PrevCheck cid.Cid // TCid<TLink<Checkpoint>>
 	Children  []ChildCheck

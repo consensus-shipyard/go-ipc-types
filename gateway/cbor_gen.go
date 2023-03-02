@@ -526,16 +526,16 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.TipSet ([]uint8) (slice)
-	if len(t.TipSet) > cbg.ByteArrayMaxLen {
-		return xerrors.Errorf("Byte array in field t.TipSet was too long")
+	// t.Proof ([]uint8) (slice)
+	if len(t.Proof) > cbg.ByteArrayMaxLen {
+		return xerrors.Errorf("Byte array in field t.Proof was too long")
 	}
 
-	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.TipSet))); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.Proof))); err != nil {
 		return err
 	}
 
-	if _, err := cw.Write(t.TipSet[:]); err != nil {
+	if _, err := cw.Write(t.Proof[:]); err != nil {
 		return err
 	}
 
@@ -618,7 +618,7 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 	}
-	// t.TipSet ([]uint8) (slice)
+	// t.Proof ([]uint8) (slice)
 
 	maj, extra, err = cr.ReadHeader()
 	if err != nil {
@@ -626,17 +626,17 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > cbg.ByteArrayMaxLen {
-		return fmt.Errorf("t.TipSet: byte array too large (%d)", extra)
+		return fmt.Errorf("t.Proof: byte array too large (%d)", extra)
 	}
 	if maj != cbg.MajByteString {
 		return fmt.Errorf("expected byte array")
 	}
 
 	if extra > 0 {
-		t.TipSet = make([]uint8, extra)
+		t.Proof = make([]uint8, extra)
 	}
 
-	if _, err := io.ReadFull(cr, t.TipSet[:]); err != nil {
+	if _, err := io.ReadFull(cr, t.Proof[:]); err != nil {
 		return err
 	}
 	// t.Epoch (abi.ChainEpoch) (int64)
