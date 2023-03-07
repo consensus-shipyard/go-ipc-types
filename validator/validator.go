@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap/buffer"
 
 	addr "github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
 )
 
 // NewValidatorFromString parses a string containing of validator address and multiaddress separated by "@".
@@ -39,8 +40,8 @@ func NewValidatorFromString(s string) (Validator, error) {
 type Validator struct {
 	Addr addr.Address `json:"addr"`
 	// FIXME: Consider using a multiaddr
-	NetAddr string `json:"net_addr,omitempty"`
-	Weight  uint64 `json:"weight,omitempty"`
+	NetAddr string          `json:"net_addr,omitempty"`
+	Weight  abi.TokenAmount `json:"weight,omitempty"`
 }
 
 func (v *Validator) ID() string {

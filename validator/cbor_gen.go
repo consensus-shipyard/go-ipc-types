@@ -49,12 +49,10 @@ func (t *Validator) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Weight (uint64) (uint64)
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Weight)); err != nil {
+	// t.Weight (big.Int) (struct)
+	if err := t.Weight.MarshalCBOR(cw); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -100,18 +98,13 @@ func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
 
 		t.NetAddr = string(sval)
 	}
-	// t.Weight (uint64) (uint64)
+	// t.Weight (big.Int) (struct)
 
 	{
 
-		maj, extra, err = cr.ReadHeader()
-		if err != nil {
-			return err
+		if err := t.Weight.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Weight: %w", err)
 		}
-		if maj != cbg.MajUnsignedInt {
-			return fmt.Errorf("wrong type for uint64 field")
-		}
-		t.Weight = uint64(extra)
 
 	}
 	return nil

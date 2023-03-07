@@ -8,15 +8,13 @@ import (
 	"math"
 	"sort"
 
+	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
+	validator "github.com/consensus-shipyard/go-ipc-types/validator"
+	address "github.com/filecoin-project/go-address"
+	abi "github.com/filecoin-project/go-state-types/abi"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
-
-	address "github.com/filecoin-project/go-address"
-	abi "github.com/filecoin-project/go-state-types/abi"
-
-	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
-	validator "github.com/consensus-shipyard/go-ipc-types/validator"
 )
 
 var _ = xerrors.Errorf
