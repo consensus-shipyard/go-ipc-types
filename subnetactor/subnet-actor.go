@@ -28,7 +28,7 @@ type State struct {
 	Genesis           []byte
 	FinalityThreshold abi.ChainEpoch
 	CheckPeriod       abi.ChainEpoch
-	Checkpoints       cid.Cid // TCid<THamt<Cid, Checkpoint>>
+	Checkpoints       cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
 	WindowChecks      cid.Cid // TCid<THamt<Cid, Votes>>,
 	ValidatorSet      *validator.Set
 	MinValidators     uint64
@@ -45,8 +45,12 @@ func (st *State) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, err
 	return *out, err
 }
 
-func (st *State) GetCheckpoint(s adt.Store, id address.Address) (*gateway.Checkpoint, bool, error) {
-	return utils.GetOutOfHamt[gateway.Checkpoint](st.Stake, s, abi.AddrKey(id))
+func (st *State) GetCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*gateway.Checkpoint, bool, error) {
+	return utils.GetOutOfHamt[gateway.Checkpoint](st.Stake, s, abi.UIntKey(uint64(epoch)))
+}
+
+func (st *State) GetCheckpointVotes(s adt.Store, checkCid cid.Cid) (*Votes, bool, error) {
+	return utils.GetOutOfHamt[Votes](st.WindowChecks, s, abi.CidKey(checkCid))
 }
 
 func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {
