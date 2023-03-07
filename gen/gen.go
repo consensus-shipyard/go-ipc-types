@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/consensus-shipyard/go-ipc-types/validator"
 	gen "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
+	"github.com/consensus-shipyard/go-ipc-types/validator"
 )
 
 func main() {
@@ -57,4 +57,3 @@ func main() {
 		panic(err)
 	}
 }
-g
