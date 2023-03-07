@@ -11,11 +11,6 @@ import (
 // in the builtin-actors bundle.
 const ManifestID = "ipc_subnet_actor"
 
-type Validator struct {
-	Addr    address.Address
-	NetAddr string
-}
-
 type ConstructParams struct {
 	Parent            sdk.SubnetID
 	Name              string

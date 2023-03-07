@@ -8,9 +8,9 @@ import (
 	"math"
 	"sort"
 
-	"github.com/ipfs/go-cid"
+	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
-	"golang.org/x/xerrors"
+	xerrors "golang.org/x/xerrors"
 )
 
 var _ = xerrors.Errorf
@@ -18,7 +18,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufValidator = []byte{130}
+var lengthBufValidator = []byte{131}
 
 func (t *Validator) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -48,6 +48,13 @@ func (t *Validator) MarshalCBOR(w io.Writer) error {
 	if _, err := io.WriteString(w, string(t.NetAddr)); err != nil {
 		return err
 	}
+
+	// t.Weight (uint64) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Weight)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -70,7 +77,7 @@ func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 2 {
+	if extra != 3 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -92,6 +99,20 @@ func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 		t.NetAddr = string(sval)
+	}
+	// t.Weight (uint64) (uint64)
+
+	{
+
+		maj, extra, err = cr.ReadHeader()
+		if err != nil {
+			return err
+		}
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
+		}
+		t.Weight = uint64(extra)
+
 	}
 	return nil
 }

@@ -36,7 +36,6 @@ func main() {
 		subnetactor.ConstructParams{},
 		subnetactor.JoinParams{},
 		subnetactor.Votes{},
-		subnetactor.Validator{},
 	); err != nil {
 		panic(err)
 	}

@@ -23,7 +23,7 @@ test_cov:
 .PHONY: format
 format:
 	gofmt -w -s .
-	goimports -w -local "github.com/consensus-shipyard/go-ipc-types" .
+	goimports -w -local "github.com/filecoin-project, github.com/consensus-shipyard/go-ipc-types" .
 
 .PHONY: lint
 lint:

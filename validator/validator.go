@@ -40,7 +40,7 @@ type Validator struct {
 	Addr addr.Address `json:"addr"`
 	// FIXME: Consider using a multiaddr
 	NetAddr string `json:"net_addr,omitempty"`
-	Weight  uint64 `json:"weight"`
+	Weight  uint64 `json:"weight,omitempty"`
 }
 
 func (v *Validator) ID() string {
