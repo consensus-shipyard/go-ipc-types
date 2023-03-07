@@ -33,21 +33,88 @@ func TestHashesAreEqualForEqualMemberships(t *testing.T) {
 
 }
 
+type validatorStrTest struct {
+	addr    string
+	netAddr string
+	weight  string
+	correct bool
+}
+
+var validatorStrTests = []validatorStrTest{
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"1",
+		true,
+	},
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"0",
+		true,
+	},
+	{"",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"0",
+		false,
+	},
+	{"",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"10",
+		false,
+	},
+	{"",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"",
+		false,
+	},
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy", "",
+		"0",
+		false,
+	},
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy", "",
+		"20",
+		false,
+	},
+	{
+		"", "",
+		"",
+		false,
+	},
+}
+
+var incorrectValidatorStrings = []string{
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy::/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:8",
+	"8:/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+	"8:@",
+}
+
 func TestValidatorFromString(t *testing.T) {
-	addr := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy"
-	netAddr := "/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	for _, test := range validatorStrTests {
+		v, err := NewValidatorFromString(fmt.Sprintf("%v:%v@%v", test.addr, test.weight, test.netAddr))
+		if !test.correct {
+			require.Error(t, err)
+			continue
+		}
 
-	v, err := NewValidatorFromString(fmt.Sprintf("%v@%v", addr, netAddr))
-	require.NoError(t, err)
+		require.Equal(t, test.addr, v.Addr.String())
+		require.Equal(t, test.netAddr, v.NetAddr)
+		require.Equal(t, test.weight, v.Weight.String())
+	}
 
-	a, err := address.NewFromString(v.ID())
-	require.NoError(t, err)
-	require.Equal(t, a, v.Addr)
-
-	m, err := multiaddr.NewMultiaddr(v.NetAddr)
-	require.NoError(t, err)
-	require.Equal(t, m.String(), v.NetAddr)
-
+	for _, test := range incorrectValidatorStrings {
+		v, err := NewValidatorFromString(test)
+		require.Error(t, err)
+		if v != nil {
+			t.Fatalf("not nil validator ")
+		}
+	}
 }
 
 func TestValidatorSetFromEnv(t *testing.T) {
@@ -155,9 +222,6 @@ func TestValidatorSetFromJson(t *testing.T) {
 	var vs1 Set
 	err = json.Unmarshal([]byte(js), &vs1)
 	require.NoError(t, err)
-
-	fmt.Println(vs1)
-	fmt.Println(vs2)
 
 	require.Equal(t, true, vs1.Equal(vs2))
 }

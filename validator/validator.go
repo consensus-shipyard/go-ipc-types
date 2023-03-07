@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/multiformats/go-multiaddr"
@@ -12,27 +13,53 @@ import (
 	"github.com/filecoin-project/go-state-types/big"
 )
 
-// NewValidatorFromString parses a string containing of validator address and multiaddress separated by "@".
+// NewValidatorFromString creates a validator based on the string in `Addr:Weight@NetworkAddr` format.
 //
-// Example of validator strings:
-// - t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ
+// An examples of a validator string:
+//   - t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:10@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ
+//
 // FIXME: Consider using json serde for this to support multiple multiaddr for validators.
 func NewValidatorFromString(s string) (*Validator, error) {
+	var w int64
+
 	parts := strings.Split(s, "@")
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("incorrect format of the string")
+		return nil, fmt.Errorf("failed to parse validators string")
+	}
+	idAndWeight := parts[0]
+	netAddr := parts[1]
+	parts = strings.Split(idAndWeight, ":")
+	if len(parts) > 2 {
+		return nil, fmt.Errorf("weight or ID are incorrect")
 	}
 
-	a, err := addr.NewFromString(parts[0])
+	id := parts[0]
+	if len(parts) == 2 {
+		n, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse weight: %w", err)
+		}
+		w = n
+	}
+
+	if id == "" {
+		return nil, fmt.Errorf("empty address")
+	}
+
+	if netAddr == "" {
+		return nil, fmt.Errorf("empty network address")
+	}
+
+	a, err := addr.NewFromString(id)
 	if err != nil {
 		return nil, err
 	}
-	m, err := multiaddr.NewMultiaddr(parts[1])
+	ma, err := multiaddr.NewMultiaddr(netAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewValidator(a, m.String()), nil
+	return NewValidatorWithWeight(a, ma.String(), abi.NewTokenAmount(w)), nil
 }
 
 type Validator struct {
@@ -43,7 +70,7 @@ type Validator struct {
 }
 
 func NewValidator(a addr.Address, netAddr string) *Validator {
-	return &Validator{Addr: a, NetAddr: netAddr, Weight: big.NewInt(0)}
+	return &Validator{Addr: a, NetAddr: netAddr, Weight: abi.NewTokenAmount(0)}
 }
 
 func NewValidatorWithWeight(a addr.Address, netAddr string, w big.Int) *Validator {
