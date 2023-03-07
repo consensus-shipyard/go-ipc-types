@@ -6,6 +6,7 @@ import (
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
+	"github.com/consensus-shipyard/go-ipc-types/validator"
 )
 
 func main() {
@@ -35,7 +36,6 @@ func main() {
 		subnetactor.ConstructParams{},
 		subnetactor.JoinParams{},
 		subnetactor.Votes{},
-		subnetactor.Validator{},
 	); err != nil {
 		panic(err)
 	}
@@ -44,6 +44,14 @@ func main() {
 	if err := gen.WriteTupleEncodersToFile("./sdk/cbor_gen.go", "sdk",
 		sdk.IPCAddress{},
 		sdk.SubnetID{},
+	); err != nil {
+		panic(err)
+	}
+
+	// validator types
+	if err := gen.WriteTupleEncodersToFile("./validator/cbor_gen.go", "validator",
+		validator.Validator{},
+		validator.Set{},
 	); err != nil {
 		panic(err)
 	}

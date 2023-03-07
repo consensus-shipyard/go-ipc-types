@@ -8,12 +8,15 @@ import (
 	"math"
 	"sort"
 
-	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
-	address "github.com/filecoin-project/go-address"
-	abi "github.com/filecoin-project/go-state-types/abi"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
+
+	address "github.com/filecoin-project/go-address"
+	abi "github.com/filecoin-project/go-state-types/abi"
+
+	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
+	validator "github.com/consensus-shipyard/go-ipc-types/validator"
 )
 
 var _ = xerrors.Errorf
@@ -137,18 +140,9 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return xerrors.Errorf("failed to write cid field t.WindowChecks: %w", err)
 	}
 
-	// t.ValidatorSet ([]subnetactor.Validator) (slice)
-	if len(t.ValidatorSet) > cbg.MaxLength {
-		return xerrors.Errorf("Slice value in field t.ValidatorSet was too long")
-	}
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.ValidatorSet))); err != nil {
+	// t.ValidatorSet (validator.Set) (struct)
+	if err := t.ValidatorSet.MarshalCBOR(cw); err != nil {
 		return err
-	}
-	for _, v := range t.ValidatorSet {
-		if err := v.MarshalCBOR(cw); err != nil {
-			return err
-		}
 	}
 
 	// t.MinValidators (uint64) (uint64)
@@ -375,35 +369,25 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		t.WindowChecks = c
 
 	}
-	// t.ValidatorSet ([]subnetactor.Validator) (slice)
+	// t.ValidatorSet (validator.Set) (struct)
 
-	maj, extra, err = cr.ReadHeader()
-	if err != nil {
-		return err
-	}
+	{
 
-	if extra > cbg.MaxLength {
-		return fmt.Errorf("t.ValidatorSet: array too large (%d)", extra)
-	}
-
-	if maj != cbg.MajArray {
-		return fmt.Errorf("expected cbor array")
-	}
-
-	if extra > 0 {
-		t.ValidatorSet = make([]Validator, extra)
-	}
-
-	for i := 0; i < int(extra); i++ {
-
-		var v Validator
-		if err := v.UnmarshalCBOR(cr); err != nil {
+		b, err := cr.ReadByte()
+		if err != nil {
 			return err
 		}
+		if b != cbg.CborNull[0] {
+			if err := cr.UnreadByte(); err != nil {
+				return err
+			}
+			t.ValidatorSet = new(validator.Set)
+			if err := t.ValidatorSet.UnmarshalCBOR(cr); err != nil {
+				return xerrors.Errorf("unmarshaling t.ValidatorSet pointer: %w", err)
+			}
+		}
 
-		t.ValidatorSet[i] = v
 	}
-
 	// t.MinValidators (uint64) (uint64)
 
 	{
@@ -825,83 +809,5 @@ func (t *Votes) UnmarshalCBOR(r io.Reader) (err error) {
 		t.Validators[i] = v
 	}
 
-	return nil
-}
-
-var lengthBufValidator = []byte{130}
-
-func (t *Validator) MarshalCBOR(w io.Writer) error {
-	if t == nil {
-		_, err := w.Write(cbg.CborNull)
-		return err
-	}
-
-	cw := cbg.NewCborWriter(w)
-
-	if _, err := cw.Write(lengthBufValidator); err != nil {
-		return err
-	}
-
-	// t.Addr (address.Address) (struct)
-	if err := t.Addr.MarshalCBOR(cw); err != nil {
-		return err
-	}
-
-	// t.NetAddr (string) (string)
-	if len(t.NetAddr) > cbg.MaxLength {
-		return xerrors.Errorf("Value in field t.NetAddr was too long")
-	}
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(t.NetAddr))); err != nil {
-		return err
-	}
-	if _, err := io.WriteString(w, string(t.NetAddr)); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
-	*t = Validator{}
-
-	cr := cbg.NewCborReader(r)
-
-	maj, extra, err := cr.ReadHeader()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
-	}()
-
-	if maj != cbg.MajArray {
-		return fmt.Errorf("cbor input should be of type array")
-	}
-
-	if extra != 2 {
-		return fmt.Errorf("cbor input had wrong number of fields")
-	}
-
-	// t.Addr (address.Address) (struct)
-
-	{
-
-		if err := t.Addr.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.Addr: %w", err)
-		}
-
-	}
-	// t.NetAddr (string) (string)
-
-	{
-		sval, err := cbg.ReadString(cr)
-		if err != nil {
-			return err
-		}
-
-		t.NetAddr = string(sval)
-	}
 	return nil
 }

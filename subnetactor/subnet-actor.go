@@ -13,6 +13,7 @@ import (
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
+	"github.com/consensus-shipyard/go-ipc-types/validator"
 )
 
 type State struct {
@@ -29,7 +30,7 @@ type State struct {
 	CheckPeriod       abi.ChainEpoch
 	Checkpoints       cid.Cid // TCid<THamt<Cid, Checkpoint>>
 	WindowChecks      cid.Cid // TCid<THamt<Cid, Votes>>,
-	ValidatorSet      []Validator
+	ValidatorSet      *validator.Set
 	MinValidators     uint64
 }
 
