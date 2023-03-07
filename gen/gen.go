@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/consensus-shipyard/go-ipc-types/validator"
 	gen "github.com/whyrusleeping/cbor-gen"
 
 	"github.com/consensus-shipyard/go-ipc-types/gateway"
@@ -47,4 +48,13 @@ func main() {
 	); err != nil {
 		panic(err)
 	}
+
+	// validator types
+	if err := gen.WriteTupleEncodersToFile("./validator/cbor_gen.go", "validator",
+		validator.Validator{},
+		validator.Set{},
+	); err != nil {
+		panic(err)
+	}
 }
+g
