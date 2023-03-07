@@ -130,7 +130,7 @@ func (t *Set) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Validators ([]validator.Validator) (slice)
+	// t.Validators ([]*validator.Validator) (slice)
 	if len(t.Validators) > cbg.MaxLength {
 		return xerrors.Errorf("Slice value in field t.Validators was too long")
 	}
@@ -183,7 +183,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 		t.ConfigurationNumber = uint64(extra)
 
 	}
-	// t.Validators ([]validator.Validator) (slice)
+	// t.Validators ([]*validator.Validator) (slice)
 
 	maj, extra, err = cr.ReadHeader()
 	if err != nil {
@@ -199,7 +199,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > 0 {
-		t.Validators = make([]Validator, extra)
+		t.Validators = make([]*Validator, extra)
 	}
 
 	for i := 0; i < int(extra); i++ {
@@ -209,7 +209,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 			return err
 		}
 
-		t.Validators[i] = v
+		t.Validators[i] = &v
 	}
 
 	return nil
