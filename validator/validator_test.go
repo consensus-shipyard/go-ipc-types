@@ -50,6 +50,12 @@ var validatorStrTests = []validatorStrTest{
 	{
 		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
 		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"1844674407370955161518446744073709551615",
+		true,
+	},
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 		"0",
 		true,
 	},

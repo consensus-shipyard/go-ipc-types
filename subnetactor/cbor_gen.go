@@ -14,7 +14,6 @@ import (
 
 	sdk "github.com/consensus-shipyard/go-ipc-types/sdk"
 	validator "github.com/consensus-shipyard/go-ipc-types/validator"
-
 	address "github.com/filecoin-project/go-address"
 	abi "github.com/filecoin-project/go-state-types/abi"
 )

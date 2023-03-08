@@ -11,6 +11,8 @@ import (
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
+
+	big "github.com/filecoin-project/go-state-types/big"
 )
 
 var _ = xerrors.Errorf
@@ -102,8 +104,18 @@ func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
 
 	{
 
-		if err := t.Weight.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.Weight: %w", err)
+		b, err := cr.ReadByte()
+		if err != nil {
+			return err
+		}
+		if b != cbg.CborNull[0] {
+			if err := cr.UnreadByte(); err != nil {
+				return err
+			}
+			t.Weight = new(big.Int)
+			if err := t.Weight.UnmarshalCBOR(cr); err != nil {
+				return xerrors.Errorf("unmarshaling t.Weight pointer: %w", err)
+			}
 		}
 
 	}
