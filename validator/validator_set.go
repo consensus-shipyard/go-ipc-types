@@ -18,8 +18,8 @@ import (
 )
 
 type Set struct {
-	ConfigurationNumber uint64      `json:"configuration_number"`
-	Validators          []Validator `json:"validators"`
+	ConfigurationNumber uint64       `json:"configuration_number"`
+	Validators          []*Validator `json:"validators"`
 }
 
 // NewValidatorSetFromFile reads a validator set based from the file.
@@ -33,7 +33,7 @@ func NewValidatorSetFromString(s string) (*Set, error) {
 }
 
 // NewValidatorSetFromValidators creates a validator set from the validators.
-func NewValidatorSetFromValidators(n uint64, vs ...Validator) *Set {
+func NewValidatorSetFromValidators(n uint64, vs ...*Validator) *Set {
 	return &Set{
 		ConfigurationNumber: n,
 		Validators:          vs[:],
@@ -50,7 +50,7 @@ func NewValidatorSetFromEnv(env string) (*Set, error) {
 	return parseValidatorSetString(e)
 }
 
-func NewValidatorSet(n uint64, vs []Validator) *Set {
+func NewValidatorSet(n uint64, vs []*Validator) *Set {
 	return &Set{
 		ConfigurationNumber: n,
 		Validators:          vs,
@@ -87,7 +87,7 @@ func (s *Set) Equal(o *Set) bool {
 		return false
 	}
 	for i, v := range s.Validators {
-		if v != o.Validators[i] {
+		if !v.Equal(s.Validators[i]) {
 			return false
 		}
 	}
@@ -113,11 +113,11 @@ func (s *Set) Hash() ([]byte, error) {
 	return cid.NewCidV0(u.Hash(bytes.Join(hs, nil))).Bytes(), nil
 }
 
-func (s *Set) GetValidators() []Validator {
+func (s *Set) GetValidators() []*Validator {
 	return s.Validators
 }
 
-func (s *Set) AddValidator(v Validator) {
+func (s *Set) AddValidator(v *Validator) {
 	s.ConfigurationNumber++
 	s.Validators = append(s.Validators, v)
 }
@@ -165,7 +165,7 @@ func (s *Set) Save(path string) error {
 
 // AddValidatorToFile adds a validator `v` to the membership file `path`.
 // If the file does not exist it will be created.
-func AddValidatorToFile(path string, v Validator) error {
+func AddValidatorToFile(path string, v *Validator) error {
 	set, err := NewValidatorSetFromFile(path)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
@@ -183,7 +183,7 @@ func AddValidatorToFile(path string, v Validator) error {
 }
 
 func parseValidatorSetString(s string) (*Set, error) {
-	validators := make([]Validator, 0)
+	validators := make([]*Validator, 0)
 	r := strings.Split(s, ";")
 
 	if len(r) != 2 {

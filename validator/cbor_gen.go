@@ -11,6 +11,8 @@ import (
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
+
+	big "github.com/filecoin-project/go-state-types/big"
 )
 
 var _ = xerrors.Errorf
@@ -49,12 +51,10 @@ func (t *Validator) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Weight (uint64) (uint64)
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Weight)); err != nil {
+	// t.Weight (big.Int) (struct)
+	if err := t.Weight.MarshalCBOR(cw); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -100,18 +100,23 @@ func (t *Validator) UnmarshalCBOR(r io.Reader) (err error) {
 
 		t.NetAddr = string(sval)
 	}
-	// t.Weight (uint64) (uint64)
+	// t.Weight (big.Int) (struct)
 
 	{
 
-		maj, extra, err = cr.ReadHeader()
+		b, err := cr.ReadByte()
 		if err != nil {
 			return err
 		}
-		if maj != cbg.MajUnsignedInt {
-			return fmt.Errorf("wrong type for uint64 field")
+		if b != cbg.CborNull[0] {
+			if err := cr.UnreadByte(); err != nil {
+				return err
+			}
+			t.Weight = new(big.Int)
+			if err := t.Weight.UnmarshalCBOR(cr); err != nil {
+				return xerrors.Errorf("unmarshaling t.Weight pointer: %w", err)
+			}
 		}
-		t.Weight = uint64(extra)
 
 	}
 	return nil
@@ -137,7 +142,7 @@ func (t *Set) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Validators ([]validator.Validator) (slice)
+	// t.Validators ([]*validator.Validator) (slice)
 	if len(t.Validators) > cbg.MaxLength {
 		return xerrors.Errorf("Slice value in field t.Validators was too long")
 	}
@@ -190,7 +195,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 		t.ConfigurationNumber = uint64(extra)
 
 	}
-	// t.Validators ([]validator.Validator) (slice)
+	// t.Validators ([]*validator.Validator) (slice)
 
 	maj, extra, err = cr.ReadHeader()
 	if err != nil {
@@ -206,7 +211,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 
 	if extra > 0 {
-		t.Validators = make([]Validator, extra)
+		t.Validators = make([]*Validator, extra)
 	}
 
 	for i := 0; i < int(extra); i++ {
@@ -216,7 +221,7 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 			return err
 		}
 
-		t.Validators[i] = v
+		t.Validators[i] = &v
 	}
 
 	return nil

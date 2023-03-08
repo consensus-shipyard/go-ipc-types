@@ -8,43 +8,84 @@ import (
 	"go.uber.org/zap/buffer"
 
 	addr "github.com/filecoin-project/go-address"
+	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/big"
 )
 
-// NewValidatorFromString parses a string containing of validator address and multiaddress separated by "@".
+// NewValidatorFromString creates a validator based on the string in `Addr:Weight@NetworkAddr` format.
 //
-// Example of validator strings:
-// - t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ
+// An examples of a validator string:
+//   - t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:10@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ
+//
 // FIXME: Consider using json serde for this to support multiple multiaddr for validators.
-func NewValidatorFromString(s string) (Validator, error) {
+func NewValidatorFromString(s string) (*Validator, error) {
+	w := big.NewInt(0)
+
 	parts := strings.Split(s, "@")
 	if len(parts) != 2 {
-		return Validator{}, fmt.Errorf("incorrect format of the string")
+		return nil, fmt.Errorf("failed to parse validators string")
+	}
+	idAndWeight := parts[0]
+	netAddr := parts[1]
+	parts = strings.Split(idAndWeight, ":")
+	if len(parts) > 2 {
+		return nil, fmt.Errorf("weight or ID are incorrect")
 	}
 
-	a, err := addr.NewFromString(parts[0])
-	if err != nil {
-		return Validator{}, err
-	}
-	m, err := multiaddr.NewMultiaddr(parts[1])
-	if err != nil {
-		return Validator{}, err
+	id := parts[0]
+	if len(parts) == 2 {
+		n, err := big.FromString(parts[1])
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse weight: %w", err)
+		}
+		w = n
 	}
 
-	return Validator{
-		Addr:    a,
-		NetAddr: m.String(),
-	}, nil
+	if id == "" {
+		return nil, fmt.Errorf("empty address")
+	}
+
+	if netAddr == "" {
+		return nil, fmt.Errorf("empty network address")
+	}
+
+	a, err := addr.NewFromString(id)
+	if err != nil {
+		return nil, err
+	}
+	ma, err := multiaddr.NewMultiaddr(netAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewValidatorWithWeight(a, ma.String(), &w), nil
 }
 
 type Validator struct {
 	Addr addr.Address `json:"addr"`
 	// FIXME: Consider using a multiaddr
-	NetAddr string `json:"net_addr,omitempty"`
-	Weight  uint64 `json:"weight,omitempty"`
+	NetAddr string           `json:"net_addr,omitempty"`
+	Weight  *abi.TokenAmount `json:"weight,omitempty"`
+}
+
+func NewValidator(a addr.Address, netAddr string) *Validator {
+	w := abi.NewTokenAmount(0)
+	return &Validator{Addr: a, NetAddr: netAddr, Weight: &w}
+}
+
+func NewValidatorWithWeight(a addr.Address, netAddr string, w *big.Int) *Validator {
+	return &Validator{Addr: a, NetAddr: netAddr, Weight: w}
 }
 
 func (v *Validator) ID() string {
 	return v.Addr.String()
+}
+
+func (v *Validator) Equal(o *Validator) bool {
+	if v.Weight != o.Weight || v.Addr != o.Addr || v.NetAddr != o.NetAddr {
+		return false
+	}
+	return true
 }
 
 func (v *Validator) Bytes() ([]byte, error) {
