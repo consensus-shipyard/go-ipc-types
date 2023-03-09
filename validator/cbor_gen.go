@@ -8,11 +8,10 @@ import (
 	"math"
 	"sort"
 
+	big "github.com/filecoin-project/go-state-types/big"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
-
-	big "github.com/filecoin-project/go-state-types/big"
 )
 
 var _ = xerrors.Errorf
@@ -136,12 +135,6 @@ func (t *Set) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.ConfigurationNumber (uint64) (uint64)
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.ConfigurationNumber)); err != nil {
-		return err
-	}
-
 	// t.Validators ([]*validator.Validator) (slice)
 	if len(t.Validators) > cbg.MaxLength {
 		return xerrors.Errorf("Slice value in field t.Validators was too long")
@@ -155,6 +148,13 @@ func (t *Set) MarshalCBOR(w io.Writer) error {
 			return err
 		}
 	}
+
+	// t.ConfigurationNumber (uint64) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.ConfigurationNumber)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -181,20 +181,6 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.ConfigurationNumber (uint64) (uint64)
-
-	{
-
-		maj, extra, err = cr.ReadHeader()
-		if err != nil {
-			return err
-		}
-		if maj != cbg.MajUnsignedInt {
-			return fmt.Errorf("wrong type for uint64 field")
-		}
-		t.ConfigurationNumber = uint64(extra)
-
-	}
 	// t.Validators ([]*validator.Validator) (slice)
 
 	maj, extra, err = cr.ReadHeader()
@@ -224,5 +210,19 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 		t.Validators[i] = &v
 	}
 
+	// t.ConfigurationNumber (uint64) (uint64)
+
+	{
+
+		maj, extra, err = cr.ReadHeader()
+		if err != nil {
+			return err
+		}
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
+		}
+		t.ConfigurationNumber = uint64(extra)
+
+	}
 	return nil
 }
