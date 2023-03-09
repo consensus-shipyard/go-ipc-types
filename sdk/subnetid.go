@@ -50,7 +50,7 @@ func NewSubnetIDFromString(addr string) (SubnetID, error) {
 		return UndefSubnetID, err
 	}
 	return SubnetID{
-		Parent: dir,
+		Parent: dir[:len(dir)-1], // move trailing `/`
 		Actor:  act,
 	}, nil
 }
