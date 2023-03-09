@@ -18,8 +18,8 @@ import (
 )
 
 type Set struct {
-	ConfigurationNumber uint64       `json:"configuration_number"`
 	Validators          []*Validator `json:"validators"`
+	ConfigurationNumber uint64       `json:"configuration_number"`
 }
 
 // NewValidatorSetFromFile reads a validator set based from the file.
