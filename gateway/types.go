@@ -18,13 +18,13 @@ import (
 const ManifestID = "ipc_gateway"
 
 type Subnet struct {
-	ID             sdk.SubnetID
+	Id             sdk.SubnetID
 	Stake          abi.TokenAmount
 	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
 	Nonce          uint64
 	CircSupply     abi.TokenAmount
 	Status         sdk.Status
-	PrevCheckpoint Checkpoint
+	PrevCheckpoint *Checkpoint
 }
 
 func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {
@@ -85,8 +85,7 @@ type ApplyMsgParams struct {
 }
 
 type CrossMsgs struct {
-	Msgs  []CrossMsg
-	Metas []CrossMsgMeta
+	Msgs []CrossMsg
 }
 
 const CrossMsgsAMTBitwidth = 3
@@ -130,7 +129,7 @@ type CheckData struct {
 	Epoch     abi.ChainEpoch
 	PrevCheck cid.Cid // TCid<TLink<Checkpoint>>
 	Children  []ChildCheck
-	CrossMsgs []CrossMsgMeta
+	CrossMsgs *CrossMsgMeta
 }
 
 type ChildCheck struct {
@@ -139,9 +138,8 @@ type ChildCheck struct {
 }
 
 type CrossMsgMeta struct {
-	From    sdk.SubnetID
-	To      sdk.SubnetID
 	MsgsCID cid.Cid // TCid<TLink<CrossMsgs>>,
 	Nonce   uint64
 	Value   abi.TokenAmount
+	Fee     abi.TokenAmount
 }

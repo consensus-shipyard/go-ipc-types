@@ -570,18 +570,9 @@ func (t *CheckData) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.CrossMsgs ([]gateway.CrossMsgMeta) (slice)
-	if len(t.CrossMsgs) > cbg.MaxLength {
-		return xerrors.Errorf("Slice value in field t.CrossMsgs was too long")
-	}
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.CrossMsgs))); err != nil {
+	// t.CrossMsgs (gateway.CrossMsgMeta) (struct)
+	if err := t.CrossMsgs.MarshalCBOR(cw); err != nil {
 		return err
-	}
-	for _, v := range t.CrossMsgs {
-		if err := v.MarshalCBOR(cw); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -705,35 +696,25 @@ func (t *CheckData) UnmarshalCBOR(r io.Reader) (err error) {
 		t.Children[i] = v
 	}
 
-	// t.CrossMsgs ([]gateway.CrossMsgMeta) (slice)
+	// t.CrossMsgs (gateway.CrossMsgMeta) (struct)
 
-	maj, extra, err = cr.ReadHeader()
-	if err != nil {
-		return err
-	}
+	{
 
-	if extra > cbg.MaxLength {
-		return fmt.Errorf("t.CrossMsgs: array too large (%d)", extra)
-	}
-
-	if maj != cbg.MajArray {
-		return fmt.Errorf("expected cbor array")
-	}
-
-	if extra > 0 {
-		t.CrossMsgs = make([]CrossMsgMeta, extra)
-	}
-
-	for i := 0; i < int(extra); i++ {
-
-		var v CrossMsgMeta
-		if err := v.UnmarshalCBOR(cr); err != nil {
+		b, err := cr.ReadByte()
+		if err != nil {
 			return err
 		}
+		if b != cbg.CborNull[0] {
+			if err := cr.UnreadByte(); err != nil {
+				return err
+			}
+			t.CrossMsgs = new(CrossMsgMeta)
+			if err := t.CrossMsgs.UnmarshalCBOR(cr); err != nil {
+				return xerrors.Errorf("unmarshaling t.CrossMsgs pointer: %w", err)
+			}
+		}
 
-		t.CrossMsgs[i] = v
 	}
-
 	return nil
 }
 
@@ -812,7 +793,7 @@ func (t *ChildCheck) UnmarshalCBOR(r io.Reader) (err error) {
 	return nil
 }
 
-var lengthBufCrossMsgMeta = []byte{133}
+var lengthBufCrossMsgMeta = []byte{132}
 
 func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -823,16 +804,6 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 	cw := cbg.NewCborWriter(w)
 
 	if _, err := cw.Write(lengthBufCrossMsgMeta); err != nil {
-		return err
-	}
-
-	// t.From (sdk.SubnetID) (struct)
-	if err := t.From.MarshalCBOR(cw); err != nil {
-		return err
-	}
-
-	// t.To (sdk.SubnetID) (struct)
-	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -850,6 +821,11 @@ func (t *CrossMsgMeta) MarshalCBOR(w io.Writer) error {
 
 	// t.Value (big.Int) (struct)
 	if err := t.Value.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.Fee (big.Int) (struct)
+	if err := t.Fee.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
@@ -874,28 +850,10 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 5 {
+	if extra != 4 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.From (sdk.SubnetID) (struct)
-
-	{
-
-		if err := t.From.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.From: %w", err)
-		}
-
-	}
-	// t.To (sdk.SubnetID) (struct)
-
-	{
-
-		if err := t.To.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.To: %w", err)
-		}
-
-	}
 	// t.MsgsCID (cid.Cid) (struct)
 
 	{
@@ -928,6 +886,15 @@ func (t *CrossMsgMeta) UnmarshalCBOR(r io.Reader) (err error) {
 
 		if err := t.Value.UnmarshalCBOR(cr); err != nil {
 			return xerrors.Errorf("unmarshaling t.Value: %w", err)
+		}
+
+	}
+	// t.Fee (big.Int) (struct)
+
+	{
+
+		if err := t.Fee.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Fee: %w", err)
 		}
 
 	}
@@ -1087,8 +1054,8 @@ func (t *Subnet) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.ID (sdk.SubnetID) (struct)
-	if err := t.ID.MarshalCBOR(cw); err != nil {
+	// t.Id (sdk.SubnetID) (struct)
+	if err := t.Id.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -1155,12 +1122,12 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.ID (sdk.SubnetID) (struct)
+	// t.Id (sdk.SubnetID) (struct)
 
 	{
 
-		if err := t.ID.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.ID: %w", err)
+		if err := t.Id.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Id: %w", err)
 		}
 
 	}
@@ -1237,8 +1204,18 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 
 	{
 
-		if err := t.PrevCheckpoint.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.PrevCheckpoint: %w", err)
+		b, err := cr.ReadByte()
+		if err != nil {
+			return err
+		}
+		if b != cbg.CborNull[0] {
+			if err := cr.UnreadByte(); err != nil {
+				return err
+			}
+			t.PrevCheckpoint = new(Checkpoint)
+			if err := t.PrevCheckpoint.UnmarshalCBOR(cr); err != nil {
+				return xerrors.Errorf("unmarshaling t.PrevCheckpoint pointer: %w", err)
+			}
 		}
 
 	}
@@ -1581,7 +1558,7 @@ func (t *ApplyMsgParams) UnmarshalCBOR(r io.Reader) (err error) {
 	return nil
 }
 
-var lengthBufCrossMsgs = []byte{130}
+var lengthBufCrossMsgs = []byte{129}
 
 func (t *CrossMsgs) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -1608,20 +1585,6 @@ func (t *CrossMsgs) MarshalCBOR(w io.Writer) error {
 			return err
 		}
 	}
-
-	// t.Metas ([]gateway.CrossMsgMeta) (slice)
-	if len(t.Metas) > cbg.MaxLength {
-		return xerrors.Errorf("Slice value in field t.Metas was too long")
-	}
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Metas))); err != nil {
-		return err
-	}
-	for _, v := range t.Metas {
-		if err := v.MarshalCBOR(cw); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -1644,7 +1607,7 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 2 {
+	if extra != 1 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -1675,35 +1638,6 @@ func (t *CrossMsgs) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 		t.Msgs[i] = v
-	}
-
-	// t.Metas ([]gateway.CrossMsgMeta) (slice)
-
-	maj, extra, err = cr.ReadHeader()
-	if err != nil {
-		return err
-	}
-
-	if extra > cbg.MaxLength {
-		return fmt.Errorf("t.Metas: array too large (%d)", extra)
-	}
-
-	if maj != cbg.MajArray {
-		return fmt.Errorf("expected cbor array")
-	}
-
-	if extra > 0 {
-		t.Metas = make([]CrossMsgMeta, extra)
-	}
-
-	for i := 0; i < int(extra); i++ {
-
-		var v CrossMsgMeta
-		if err := v.UnmarshalCBOR(cr); err != nil {
-			return err
-		}
-
-		t.Metas[i] = v
 	}
 
 	return nil
