@@ -18,7 +18,7 @@ import (
 const ManifestID = "ipc_gateway"
 
 type Subnet struct {
-	Id             sdk.SubnetID
+	Id             sdk.SubnetID //nolint:golint
 	Stake          abi.TokenAmount
 	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
 	Nonce          uint64
