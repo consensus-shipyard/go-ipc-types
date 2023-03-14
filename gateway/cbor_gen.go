@@ -1054,8 +1054,8 @@ func (t *Subnet) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Id (sdk.SubnetID) (struct)
-	if err := t.Id.MarshalCBOR(cw); err != nil {
+	// t.ID (sdk.SubnetID) (struct)
+	if err := t.ID.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -1122,12 +1122,12 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Id (sdk.SubnetID) (struct)
+	// t.ID (sdk.SubnetID) (struct)
 
 	{
 
-		if err := t.Id.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.Id: %w", err)
+		if err := t.ID.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.ID: %w", err)
 		}
 
 	}
