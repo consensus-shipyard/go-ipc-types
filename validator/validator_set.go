@@ -57,6 +57,13 @@ func NewValidatorSet(n uint64, vs []*Validator) *Set {
 	}
 }
 
+func NewEmptyValidatorSet() *Set {
+	return &Set{
+		ConfigurationNumber: 0,
+		Validators:          make([]*Validator, 0),
+	}
+}
+
 func (s *Set) Size() int {
 	return len(s.Validators)
 }
