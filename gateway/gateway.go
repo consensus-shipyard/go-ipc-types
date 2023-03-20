@@ -1,8 +1,6 @@
 package gateway
 
 import (
-	"fmt"
-
 	"github.com/ipfs/go-cid"
 	"golang.org/x/xerrors"
 
@@ -28,18 +26,6 @@ type State struct {
 	BottomupMsgMeta      cid.Cid // TCid<TAmt<CrossMsgMeta, CROSSMSG_AMT_BITWIDTH>>
 	AppliedBottomupNonce uint64
 	AppliedTopdownNonce  uint64
-}
-
-func GetTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, error) {
-	var out CrossMsg
-	found, err := crossMsgs.Get(nonce, &out)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get cross-msg with nonce %v: %w", nonce, err)
-	}
-	if !found {
-		return nil, nil
-	}
-	return &out, nil
 }
 
 func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) {
@@ -73,22 +59,34 @@ func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*Cro
 // BottomUpMsgFromNonce gets the latest bottomUpMetas from a specific nonce
 // (including the one specified, i.e. [nonce, latest], both limits
 // included).
-func (st *State) BottomUpMsgFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMeta, error) {
-	out := make([]*CrossMsgMeta, 0)
-	adtArray, err := adt.AsArray(s, st.BottomupMsgMeta, CrossMsgsAMTBitwidth)
+func (st *State) BottomUpMsgsFromNonce(s adt.Store, nonce uint64) ([]*CrossMsgMeta, error) {
+	crossMsgs, err := adt.AsArray(s, st.BottomupMsgMeta, CrossMsgsAMTBitwidth)
 	if err != nil {
 		return nil, err
 	}
+	out := make([]*CrossMsgMeta, 0)
 	for i := nonce; i < st.BottomupNonce; i++ {
-		meta, _, err := utils.GetOutOfAdtArray[CrossMsgMeta](adtArray, i)
+		msg, found, err := getBottomUpMsg(crossMsgs, i)
 		if err != nil {
 			return nil, err
 		}
-		if meta != nil { // then found
-			out = append(out, meta)
+		if found {
+			out = append(out, msg)
 		}
 	}
 	return out, nil
+}
+
+func getBottomUpMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsgMeta, bool, error) {
+	var out CrossMsgMeta
+	found, err := crossMsgs.Get(nonce, &out)
+	if err != nil {
+		return nil, false, xerrors.Errorf("failed to get cross-msg with nonce %v: %w", nonce, err)
+	}
+	if !found {
+		return nil, found, nil
+	}
+	return &out, found, nil
 }
 
 // GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted

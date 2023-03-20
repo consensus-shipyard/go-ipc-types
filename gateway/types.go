@@ -2,9 +2,11 @@ package gateway
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
+	xerrors "golang.org/x/xerrors"
 
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
@@ -29,6 +31,41 @@ type Subnet struct {
 
 func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {
 	return utils.GetOutOfArray[CrossMsg](sn.TopDownMsgs, s, nonce, CrossMsgsAMTBitwidth)
+}
+
+// TopDownMsgFromNonce gets the latest topDownMessages from a specific nonce
+// (including the one specified, i.e. [nonce, latest], both limits
+// included).
+func (sn *Subnet) TopDownMsgsFromNonce(s adt.Store, nonce uint64) ([]*CrossMsg, error) {
+	crossMsgs, err := adt.AsArray(s, sn.TopDownMsgs, CrossMsgsAMTBitwidth)
+	if err != nil {
+		return nil, xerrors.Errorf("failed to load cross-msgs: %w", err)
+	}
+	// TODO: Consider setting the length of the slice in advance
+	// to improve performance.
+	out := make([]*CrossMsg, 0)
+	for i := nonce; i < sn.Nonce; i++ {
+		msg, found, err := getTopDownMsg(crossMsgs, i)
+		if err != nil {
+			return nil, err
+		}
+		if found {
+			out = append(out, msg)
+		}
+	}
+	return out, nil
+}
+
+func getTopDownMsg(crossMsgs *adt.Array, nonce uint64) (*CrossMsg, bool, error) {
+	var out CrossMsg
+	found, err := crossMsgs.Get(nonce, &out)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to get cross-msg with nonce %v: %w", nonce, err)
+	}
+	if !found {
+		return nil, found, nil
+	}
+	return &out, found, nil
 }
 
 type StorableMsg struct {
