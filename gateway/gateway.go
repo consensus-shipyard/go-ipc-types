@@ -56,6 +56,23 @@ func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*Cro
 	return crossMsg, err
 }
 
+// GetBottomUpMsgsFromRegistry returns the crossmsgs from a CID in the registry.
+func (st *State) GetBottomUpMsgsFromRegistry(store adt.Store, c cid.Cid) (*CrossMsgs, bool, error) {
+	msgMetas, err := adt.AsMap(store, st.CheckMsgRegistry, builtin.DefaultHamtBitwidth)
+	if err != nil {
+		return nil, false, err
+	}
+	var out CrossMsgs
+	found, err := msgMetas.Get(abi.CidKey(c), &out)
+	if err != nil {
+		return nil, false, xerrors.Errorf("failed to get crossMsgMeta from registry with cid %v: %w", c, err)
+	}
+	if !found {
+		return nil, false, nil
+	}
+	return &out, true, nil
+}
+
 // BottomUpMsgFromNonce gets the latest bottomUpMetas from a specific nonce
 // (including the one specified, i.e. [nonce, latest], both limits
 // included).
