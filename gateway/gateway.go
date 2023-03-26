@@ -16,7 +16,7 @@ type State struct {
 	NetworkName          sdk.SubnetID
 	TotalSubnets         uint64
 	MinStake             abi.TokenAmount
-	Subnets              cid.Cid // TCid<THamt<Cid, Subnet>>
+	Subnets              cid.Cid // TCid<THamt<SubnetID, Subnet>>
 	CheckPeriod          abi.ChainEpoch
 	Checkpoints          cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
 	CheckMsgRegistry     cid.Cid // TCid<THamt<TCid<TLink<CrossMsgs>>, CrossMsgs>>

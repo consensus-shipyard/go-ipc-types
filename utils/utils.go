@@ -55,7 +55,7 @@ func GetOutOfHamt[T any](cID cid.Cid, s adt.Store, k abi.Keyer) (*T, bool, error
 	var out T
 	adtMap, err := adt.AsMap(s, cID, builtin.DefaultHamtBitwidth)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to get stake: %w", err)
+		return nil, false, fmt.Errorf("failed to get hamt: %w", err)
 	}
 
 	if i, ok := (any(&out)).(cbor.Unmarshaler); ok {
