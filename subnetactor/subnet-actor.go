@@ -46,7 +46,7 @@ func (st *State) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, err
 }
 
 func (st *State) GetCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*gateway.Checkpoint, bool, error) {
-	return utils.GetOutOfHamt[gateway.Checkpoint](st.Stake, s, abi.UIntKey(uint64(epoch)))
+	return utils.GetOutOfHamt[gateway.Checkpoint](st.Checkpoints, s, sdk.EpochKey(epoch))
 }
 
 func (st *State) GetCheckpointVotes(s adt.Store, checkCid cid.Cid) (*Votes, bool, error) {

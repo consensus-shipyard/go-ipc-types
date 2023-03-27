@@ -32,8 +32,8 @@ func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) 
 	return utils.GetOutOfHamt[Subnet](st.Subnets, s, id)
 }
 
-func (st *State) GetCheckpoints(s adt.Store, c abi.ChainEpoch) (*Checkpoint, bool, error) {
-	return utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, abi.UIntKey(uint64(c)))
+func (st *State) GetCheckpoints(s adt.Store, e abi.ChainEpoch) (*Checkpoint, bool, error) {
+	return utils.GetOutOfHamt[Checkpoint](st.Checkpoints, s, sdk.EpochKey(e))
 }
 
 func (st *State) GetCrossMsgs(s adt.Store, cID cid.Cid) (*CrossMsgs, bool, error) {
