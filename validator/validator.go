@@ -117,3 +117,20 @@ func SplitAndTrimEmpty(s, sep, cutset string) []string {
 
 	return nonEmptyStrings
 }
+
+// OnchainValidators information stored in the gateway actor
+type OnChainValidators struct {
+	Validators  Set
+	TotalWeight abi.TokenAmount
+}
+
+func NewOnChainValidatorsFromSet(set *Set) OnChainValidators {
+	weight := abi.NewTokenAmount(0)
+	for _, v := range set.Validators {
+		weight = big.Add(weight, *v.Weight)
+	}
+	return OnChainValidators{
+		Validators:  *set,
+		TotalWeight: weight,
+	}
+}
