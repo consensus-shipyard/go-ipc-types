@@ -52,9 +52,9 @@ func (st *State) GetCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*gateway.Bott
 	return utils.GetOutOfHamt[gateway.BottomUpCheckpoint](st.CommittedCheckpoints, s, sdk.EpochKey(epoch))
 }
 
-func (st *State) GetCheckpointVotes(s adt.Store, checkCid cid.Cid) (*Votes, bool, error) {
+func (st *State) GetCheckpointVotes(_ adt.Store, _ cid.Cid) (*Votes, bool, error) {
 	// return utils.GetOutOfHamt[Votes](st.WindowChecks, s, abi.CidKey(checkCid))
-	panic("not implemented")
+	panic("function not implemented")
 }
 
 func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {
