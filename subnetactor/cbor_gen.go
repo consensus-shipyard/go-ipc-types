@@ -22,7 +22,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufState = []byte{143}
+var lengthBufState = []byte{145}
 
 func (t *State) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -104,38 +104,43 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.FinalityThreshold (abi.ChainEpoch) (int64)
-	if t.FinalityThreshold >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.FinalityThreshold)); err != nil {
+	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
+	if t.BottomUpCheckPeriod >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.BottomUpCheckPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.FinalityThreshold-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.BottomUpCheckPeriod-1)); err != nil {
 			return err
 		}
 	}
 
-	// t.CheckPeriod (abi.ChainEpoch) (int64)
-	if t.CheckPeriod >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.CheckPeriod)); err != nil {
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
+	if t.TopDownCheckPeriod >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.TopDownCheckPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.CheckPeriod-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.TopDownCheckPeriod-1)); err != nil {
 			return err
 		}
 	}
 
-	// t.Checkpoints (cid.Cid) (struct)
-
-	if err := cbg.WriteCid(cw, t.Checkpoints); err != nil {
-		return xerrors.Errorf("failed to write cid field t.Checkpoints: %w", err)
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	if t.GenesisEpoch >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.GenesisEpoch)); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.GenesisEpoch-1)); err != nil {
+			return err
+		}
 	}
 
-	// t.WindowChecks (cid.Cid) (struct)
+	// t.CommittedCheckpoints (cid.Cid) (struct)
 
-	if err := cbg.WriteCid(cw, t.WindowChecks); err != nil {
-		return xerrors.Errorf("failed to write cid field t.WindowChecks: %w", err)
+	if err := cbg.WriteCid(cw, t.CommittedCheckpoints); err != nil {
+		return xerrors.Errorf("failed to write cid field t.CommittedCheckpoints: %w", err)
 	}
 
 	// t.ValidatorSet (validator.Set) (struct)
@@ -149,6 +154,16 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
+	// t.PreviousExecutedCheckpoint (cid.Cid) (struct)
+
+	if err := cbg.WriteCid(cw, t.PreviousExecutedCheckpoint); err != nil {
+		return xerrors.Errorf("failed to write cid field t.PreviousExecutedCheckpoint: %w", err)
+	}
+
+	// t.BottomUpCheckpointVoting (voting.Voting) (struct)
+	if err := t.BottomUpCheckpointVoting.MarshalCBOR(cw); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -171,7 +186,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 15 {
+	if extra != 17 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -293,7 +308,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 	if _, err := io.ReadFull(cr, t.Genesis[:]); err != nil {
 		return err
 	}
-	// t.FinalityThreshold (abi.ChainEpoch) (int64)
+	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
 	{
 		maj, extra, err := cr.ReadHeader()
 		var extraI int64
@@ -316,9 +331,9 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for int64 field: %d", maj)
 		}
 
-		t.FinalityThreshold = abi.ChainEpoch(extraI)
+		t.BottomUpCheckPeriod = abi.ChainEpoch(extraI)
 	}
-	// t.CheckPeriod (abi.ChainEpoch) (int64)
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
 	{
 		maj, extra, err := cr.ReadHeader()
 		var extraI int64
@@ -341,30 +356,43 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for int64 field: %d", maj)
 		}
 
-		t.CheckPeriod = abi.ChainEpoch(extraI)
+		t.TopDownCheckPeriod = abi.ChainEpoch(extraI)
 	}
-	// t.Checkpoints (cid.Cid) (struct)
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	{
+		maj, extra, err := cr.ReadHeader()
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.GenesisEpoch = abi.ChainEpoch(extraI)
+	}
+	// t.CommittedCheckpoints (cid.Cid) (struct)
 
 	{
 
 		c, err := cbg.ReadCid(cr)
 		if err != nil {
-			return xerrors.Errorf("failed to read cid field t.Checkpoints: %w", err)
+			return xerrors.Errorf("failed to read cid field t.CommittedCheckpoints: %w", err)
 		}
 
-		t.Checkpoints = c
-
-	}
-	// t.WindowChecks (cid.Cid) (struct)
-
-	{
-
-		c, err := cbg.ReadCid(cr)
-		if err != nil {
-			return xerrors.Errorf("failed to read cid field t.WindowChecks: %w", err)
-		}
-
-		t.WindowChecks = c
+		t.CommittedCheckpoints = c
 
 	}
 	// t.ValidatorSet (validator.Set) (struct)
@@ -398,6 +426,27 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for uint64 field")
 		}
 		t.MinValidators = uint64(extra)
+
+	}
+	// t.PreviousExecutedCheckpoint (cid.Cid) (struct)
+
+	{
+
+		c, err := cbg.ReadCid(cr)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.PreviousExecutedCheckpoint: %w", err)
+		}
+
+		t.PreviousExecutedCheckpoint = c
+
+	}
+	// t.BottomUpCheckpointVoting (voting.Voting) (struct)
+
+	{
+
+		if err := t.BottomUpCheckpointVoting.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.BottomUpCheckpointVoting: %w", err)
+		}
 
 	}
 	return nil
@@ -457,24 +506,24 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.FinalityThreshold (abi.ChainEpoch) (int64)
-	if t.FinalityThreshold >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.FinalityThreshold)); err != nil {
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
+	if t.TopDownCheckPeriod >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.TopDownCheckPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.FinalityThreshold-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.TopDownCheckPeriod-1)); err != nil {
 			return err
 		}
 	}
 
-	// t.CheckPeriod (abi.ChainEpoch) (int64)
-	if t.CheckPeriod >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.CheckPeriod)); err != nil {
+	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
+	if t.BottomUpCheckPeriod >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.BottomUpCheckPeriod)); err != nil {
 			return err
 		}
 	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.CheckPeriod-1)); err != nil {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.BottomUpCheckPeriod-1)); err != nil {
 			return err
 		}
 	}
@@ -587,7 +636,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 		t.MinValidators = uint64(extra)
 
 	}
-	// t.FinalityThreshold (abi.ChainEpoch) (int64)
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
 	{
 		maj, extra, err := cr.ReadHeader()
 		var extraI int64
@@ -610,9 +659,9 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for int64 field: %d", maj)
 		}
 
-		t.FinalityThreshold = abi.ChainEpoch(extraI)
+		t.TopDownCheckPeriod = abi.ChainEpoch(extraI)
 	}
-	// t.CheckPeriod (abi.ChainEpoch) (int64)
+	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
 	{
 		maj, extra, err := cr.ReadHeader()
 		var extraI int64
@@ -635,7 +684,7 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for int64 field: %d", maj)
 		}
 
-		t.CheckPeriod = abi.ChainEpoch(extraI)
+		t.BottomUpCheckPeriod = abi.ChainEpoch(extraI)
 	}
 	// t.Genesis ([]uint8) (slice)
 

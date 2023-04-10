@@ -26,7 +26,7 @@ type Subnet struct {
 	Nonce          uint64
 	CircSupply     abi.TokenAmount
 	Status         sdk.Status
-	PrevCheckpoint *Checkpoint
+	PrevCheckpoint *BottomUpCheckpoint
 }
 
 func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {
@@ -117,28 +117,22 @@ type CrossMsgParams struct {
 	Destination sdk.SubnetID
 }
 
-type ApplyMsgParams struct {
-	CrossMsg CrossMsg
-}
-
 type CrossMsgs struct {
 	Msgs []CrossMsg
 }
 
 const CrossMsgsAMTBitwidth = 3
 
-type Checkpoint struct {
+type BottomUpCheckpoint struct {
 	Data CheckData
 	Sig  []byte
 }
 
-func NewCheckpoint(id sdk.SubnetID, epoch abi.ChainEpoch) *Checkpoint {
-	return &Checkpoint{
-		Data: CheckData{Source: id, Epoch: epoch},
-	}
+func NewBottomUpCheckpoint(subnet sdk.SubnetID, epoch abi.ChainEpoch) *BottomUpCheckpoint {
+	return &BottomUpCheckpoint{Data: CheckData{Source: subnet, Epoch: epoch}}
 }
 
-func (c *Checkpoint) Cid() (cid.Cid, error) {
+func (c *BottomUpCheckpoint) Cid() (cid.Cid, error) {
 	buf := new(bytes.Buffer)
 	if err := c.Data.MarshalCBOR(buf); err != nil {
 		return cid.Undef, err
@@ -166,17 +160,20 @@ type CheckData struct {
 	Epoch     abi.ChainEpoch
 	PrevCheck cid.Cid // TCid<TLink<Checkpoint>>
 	Children  []ChildCheck
-	CrossMsgs *CrossMsgMeta
+	CrossMsgs BatchCrossMsgs
 }
 
 type ChildCheck struct {
 	Source sdk.SubnetID
-	Checks cid.Cid // Vec<TCid<TLink<Checkpoint>>>,
+	Checks []cid.Cid // Vec<TCid<TLink<Checkpoint>>>,
 }
 
-type CrossMsgMeta struct {
-	MsgsCID cid.Cid // TCid<TLink<CrossMsgs>>,
-	Nonce   uint64
-	Value   abi.TokenAmount
-	Fee     abi.TokenAmount
+type BatchCrossMsgs struct {
+	CrossMsgs []CrossMsg
+	Fee       abi.TokenAmount
+}
+
+type TopDownCheckpoint struct {
+	Epoch       abi.ChainEpoch
+	TopDownMsgs []CrossMsgs
 }

@@ -5,12 +5,10 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/ipfs/go-cid"
 	"github.com/test-go/testify/require"
 
-	"github.com/filecoin-project/go-state-types/big"
-
-	"github.com/consensus-shipyard/go-ipc-types/sdk"
-	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
+	"github.com/consensus-shipyard/go-ipc-types/voting"
 )
 
 // TestCborSerialization cbor-serializes a specific type and prints in a log
@@ -22,15 +20,10 @@ import (
 // This is an example with subnetactor.ConstructParams, but it can be done
 // with any type implementing the CborMarshaler interface.
 func TestCborSerialization(t *testing.T) {
-	params := subnetactor.ConstructParams{
-		Parent:            sdk.RootSubnet,
-		Name:              "test",
-		IPCGatewayAddr:    64,
-		CheckPeriod:       0,
-		FinalityThreshold: 0,
-		MinValidators:     0,
-		MinValidatorStake: big.Zero(),
-		Consensus:         subnetactor.Mir,
+	c, _ := cid.Parse("bafy2bzacecnamqgqmifpluoeldx7zzglxcljo6oja4vrmtj7432rphldpdmm2")
+	params := voting.Voting{
+		EpochVoteSubmission: c,
+		Ratio:               voting.Ratio{Num: 2, Denom: 3},
 	}
 	buf := new(bytes.Buffer)
 	err := params.MarshalCBOR(buf)

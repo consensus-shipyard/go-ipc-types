@@ -7,6 +7,7 @@ import (
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/subnetactor"
 	"github.com/consensus-shipyard/go-ipc-types/validator"
+	"github.com/consensus-shipyard/go-ipc-types/voting"
 )
 
 func main() {
@@ -14,17 +15,17 @@ func main() {
 	if err := gen.WriteTupleEncodersToFile("./gateway/cbor_gen.go", "gateway",
 		gateway.State{},
 		gateway.ConstructParams{},
-		gateway.Checkpoint{},
+		gateway.BottomUpCheckpoint{},
+		gateway.TopDownCheckpoint{},
 		gateway.CheckData{},
 		gateway.ChildCheck{},
-		gateway.CrossMsgMeta{},
+		gateway.BatchCrossMsgs{},
 		gateway.StorableMsg{},
 		gateway.Subnet{},
 		gateway.RawBytes{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},
 		gateway.CrossMsgParams{},
-		gateway.ApplyMsgParams{},
 		gateway.CrossMsgs{},
 	); err != nil {
 		panic(err)
@@ -52,6 +53,15 @@ func main() {
 	if err := gen.WriteTupleEncodersToFile("./validator/cbor_gen.go", "validator",
 		validator.Validator{},
 		validator.Set{},
+		validator.OnChainValidators{},
+	); err != nil {
+		panic(err)
+	}
+
+	// common types
+	if err := gen.WriteTupleEncodersToFile("./voting/cbor_gen.go", "voting",
+		voting.Voting{},
+		voting.Ratio{},
 	); err != nil {
 		panic(err)
 	}

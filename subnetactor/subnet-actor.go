@@ -14,24 +14,27 @@ import (
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
 	"github.com/consensus-shipyard/go-ipc-types/validator"
+	"github.com/consensus-shipyard/go-ipc-types/voting"
 )
 
 type State struct {
-	Name              string
-	ParentID          sdk.SubnetID
-	IPCGatewayAddr    address.Address
-	Consensus         ConsensusType
-	MinValidatorStake abi.TokenAmount
-	TotalStake        abi.TokenAmount
-	Stake             cid.Cid // TCid<THamt<Cid,TokenAmount>>
-	Status            sdk.Status
-	Genesis           []byte
-	FinalityThreshold abi.ChainEpoch
-	CheckPeriod       abi.ChainEpoch
-	Checkpoints       cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
-	WindowChecks      cid.Cid // TCid<THamt<Cid, Votes>>,
-	ValidatorSet      *validator.Set
-	MinValidators     uint64
+	Name                       string
+	ParentID                   sdk.SubnetID
+	IPCGatewayAddr             address.Address
+	Consensus                  ConsensusType
+	MinValidatorStake          abi.TokenAmount
+	TotalStake                 abi.TokenAmount
+	Stake                      cid.Cid // TCid<THamt<Cid,TokenAmount>>
+	Status                     sdk.Status
+	Genesis                    []byte
+	BottomUpCheckPeriod        abi.ChainEpoch
+	TopDownCheckPeriod         abi.ChainEpoch
+	GenesisEpoch               abi.ChainEpoch
+	CommittedCheckpoints       cid.Cid // TCid<THamt<ChainEpoch, BottomUpCheckpoint>>
+	ValidatorSet               *validator.Set
+	MinValidators              uint64
+	PreviousExecutedCheckpoint cid.Cid
+	BottomUpCheckpointVoting   voting.Voting
 }
 
 func (st *State) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, error) {
@@ -45,12 +48,13 @@ func (st *State) GetStake(s adt.Store, id address.Address) (abi.TokenAmount, err
 	return *out, err
 }
 
-func (st *State) GetCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*gateway.Checkpoint, bool, error) {
-	return utils.GetOutOfHamt[gateway.Checkpoint](st.Checkpoints, s, sdk.EpochKey(epoch))
+func (st *State) GetCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*gateway.BottomUpCheckpoint, bool, error) {
+	return utils.GetOutOfHamt[gateway.BottomUpCheckpoint](st.CommittedCheckpoints, s, sdk.EpochKey(epoch))
 }
 
-func (st *State) GetCheckpointVotes(s adt.Store, checkCid cid.Cid) (*Votes, bool, error) {
-	return utils.GetOutOfHamt[Votes](st.WindowChecks, s, abi.CidKey(checkCid))
+func (st *State) GetCheckpointVotes(_ adt.Store, _ cid.Cid) (*Votes, bool, error) {
+	// return utils.GetOutOfHamt[Votes](st.WindowChecks, s, abi.CidKey(checkCid))
+	panic("function not implemented")
 }
 
 func (st *State) HasMajorityVote(s adt.Store, v Votes) (bool, error) {

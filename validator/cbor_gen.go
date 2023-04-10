@@ -226,3 +226,73 @@ func (t *Set) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 	return nil
 }
+
+var lengthBufOnChainValidators = []byte{130}
+
+func (t *OnChainValidators) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufOnChainValidators); err != nil {
+		return err
+	}
+
+	// t.Validators (validator.Set) (struct)
+	if err := t.Validators.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.TotalWeight (big.Int) (struct)
+	if err := t.TotalWeight.MarshalCBOR(cw); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *OnChainValidators) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = OnChainValidators{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 2 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.Validators (validator.Set) (struct)
+
+	{
+
+		if err := t.Validators.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Validators: %w", err)
+		}
+
+	}
+	// t.TotalWeight (big.Int) (struct)
+
+	{
+
+		if err := t.TotalWeight.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.TotalWeight: %w", err)
+		}
+
+	}
+	return nil
+}

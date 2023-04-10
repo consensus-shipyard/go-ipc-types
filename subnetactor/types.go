@@ -12,15 +12,15 @@ import (
 const ManifestID = "ipc_subnet_actor"
 
 type ConstructParams struct {
-	Parent            sdk.SubnetID
-	Name              string
-	IPCGatewayAddr    uint64
-	Consensus         ConsensusType
-	MinValidatorStake abi.TokenAmount
-	MinValidators     uint64
-	FinalityThreshold abi.ChainEpoch
-	CheckPeriod       abi.ChainEpoch
-	Genesis           []byte
+	Parent              sdk.SubnetID
+	Name                string
+	IPCGatewayAddr      uint64
+	Consensus           ConsensusType
+	MinValidatorStake   abi.TokenAmount
+	MinValidators       uint64
+	TopDownCheckPeriod  abi.ChainEpoch
+	BottomUpCheckPeriod abi.ChainEpoch
+	Genesis             []byte
 }
 
 type JoinParams struct {
