@@ -27,8 +27,9 @@ type State struct {
 	Stake                      cid.Cid // TCid<THamt<Cid,TokenAmount>>
 	Status                     sdk.Status
 	Genesis                    []byte
-	TopDownCheckPeriod         abi.ChainEpoch
 	BottomUpCheckPeriod        abi.ChainEpoch
+	TopDownCheckPeriod         abi.ChainEpoch
+	GenesisEpoch               abi.ChainEpoch
 	CommittedCheckpoints       cid.Cid // TCid<THamt<ChainEpoch, BottomUpCheckpoint>>
 	ValidatorSet               *validator.Set
 	MinValidators              uint64

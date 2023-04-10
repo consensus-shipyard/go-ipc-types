@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/ipfs/go-cid"
 	"github.com/test-go/testify/require"
 
@@ -23,9 +22,8 @@ import (
 func TestCborSerialization(t *testing.T) {
 	c, _ := cid.Parse("bafy2bzacecnamqgqmifpluoeldx7zzglxcljo6oja4vrmtj7432rphldpdmm2")
 	params := voting.Voting{
-		ExecutableEpochQueue: []abi.ChainEpoch{1},
-		EpochVoteSubmission:  c,
-		Ratio:                voting.Ratio{Num: 2, Denom: 3},
+		EpochVoteSubmission: c,
+		Ratio:               voting.Ratio{Num: 2, Denom: 3},
 	}
 	buf := new(bytes.Buffer)
 	err := params.MarshalCBOR(buf)
