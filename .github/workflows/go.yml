@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.18' ]
+        go: [ '1.19' ]
     steps:
       - name: Set up Golang
         uses: actions/setup-go@v3
@@ -24,7 +24,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: event-log-go-1.18
+          name: event-log-go-1.19
           path: failed-test-data
   tests-go-latest:
     runs-on: ubuntu-latest
