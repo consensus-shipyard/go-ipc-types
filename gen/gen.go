@@ -62,6 +62,7 @@ func main() {
 	if err := gen.WriteTupleEncodersToFile("./voting/cbor_gen.go", "voting",
 		voting.Voting{},
 		voting.Ratio{},
+		voting.EpochVoteSubmissions{},
 	); err != nil {
 		panic(err)
 	}
