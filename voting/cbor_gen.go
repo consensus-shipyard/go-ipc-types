@@ -349,3 +349,148 @@ func (t *Ratio) UnmarshalCBOR(r io.Reader) (err error) {
 	}
 	return nil
 }
+
+var lengthBufEpochVoteSubmissions = []byte{133}
+
+func (t *EpochVoteSubmissions) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufEpochVoteSubmissions); err != nil {
+		return err
+	}
+
+	// t.TotalSubmissionWeight (big.Int) (struct)
+	if err := t.TotalSubmissionWeight.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.MostVotedKey ([]uint8) (slice)
+	if len(t.MostVotedKey) > cbg.ByteArrayMaxLen {
+		return xerrors.Errorf("Byte array in field t.MostVotedKey was too long")
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajByteString, uint64(len(t.MostVotedKey))); err != nil {
+		return err
+	}
+
+	if _, err := cw.Write(t.MostVotedKey[:]); err != nil {
+		return err
+	}
+
+	// t.Submitters (cid.Cid) (struct)
+
+	if err := cbg.WriteCid(cw, t.Submitters); err != nil {
+		return xerrors.Errorf("failed to write cid field t.Submitters: %w", err)
+	}
+
+	// t.SubmissionWeights (cid.Cid) (struct)
+
+	if err := cbg.WriteCid(cw, t.SubmissionWeights); err != nil {
+		return xerrors.Errorf("failed to write cid field t.SubmissionWeights: %w", err)
+	}
+
+	// t.Submissions (cid.Cid) (struct)
+
+	if err := cbg.WriteCid(cw, t.Submissions); err != nil {
+		return xerrors.Errorf("failed to write cid field t.Submissions: %w", err)
+	}
+
+	return nil
+}
+
+func (t *EpochVoteSubmissions) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = EpochVoteSubmissions{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 5 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.TotalSubmissionWeight (big.Int) (struct)
+
+	{
+
+		if err := t.TotalSubmissionWeight.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.TotalSubmissionWeight: %w", err)
+		}
+
+	}
+	// t.MostVotedKey ([]uint8) (slice)
+
+	maj, extra, err = cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+
+	if extra > cbg.ByteArrayMaxLen {
+		return fmt.Errorf("t.MostVotedKey: byte array too large (%d)", extra)
+	}
+	if maj != cbg.MajByteString {
+		return fmt.Errorf("expected byte array")
+	}
+
+	if extra > 0 {
+		t.MostVotedKey = make([]uint8, extra)
+	}
+
+	if _, err := io.ReadFull(cr, t.MostVotedKey[:]); err != nil {
+		return err
+	}
+	// t.Submitters (cid.Cid) (struct)
+
+	{
+
+		c, err := cbg.ReadCid(cr)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.Submitters: %w", err)
+		}
+
+		t.Submitters = c
+
+	}
+	// t.SubmissionWeights (cid.Cid) (struct)
+
+	{
+
+		c, err := cbg.ReadCid(cr)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.SubmissionWeights: %w", err)
+		}
+
+		t.SubmissionWeights = c
+
+	}
+	// t.Submissions (cid.Cid) (struct)
+
+	{
+
+		c, err := cbg.ReadCid(cr)
+		if err != nil {
+			return xerrors.Errorf("failed to read cid field t.Submissions: %w", err)
+		}
+
+		t.Submissions = c
+
+	}
+	return nil
+}
