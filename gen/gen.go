@@ -22,7 +22,6 @@ func main() {
 		gateway.BatchCrossMsgs{},
 		gateway.StorableMsg{},
 		gateway.Subnet{},
-		gateway.RawBytes{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},
 		gateway.CrossMsgParams{},
