@@ -72,7 +72,7 @@ type StorableMsg struct {
 	From   sdk.IPCAddress
 	To     sdk.IPCAddress
 	Method abi.MethodNum
-	Params RawBytes
+	Params []byte
 	Value  abi.TokenAmount
 	Nonce  uint64
 }
@@ -97,10 +97,6 @@ type IPCMsgType int
 type ConstructParams struct {
 	NetworkName      string
 	CheckpointPeriod abi.ChainEpoch
-}
-
-type RawBytes struct {
-	Bytes []byte
 }
 
 type CrossMsg struct {
