@@ -52,11 +52,13 @@ func (st *State) GetTopDownMsg(s adt.Store, id sdk.SubnetID, nonce uint64) (*Cro
 
 // GetWindowCheckpoint gets the template for a specific epoch. If no template is persisted
 // yet, an empty template is provided.
+// Here we get the checkpoint template for an epoch that is already finished and ready to
+// be populated
 //
 // NOTE: This function doesn't check if a template from the future is being requested.
 func (st *State) GetWindowCheckpoint(s adt.Store, epoch abi.ChainEpoch) (*BottomUpCheckpoint, error) {
 	ch, found, err := utils.GetOutOfHamt[BottomUpCheckpoint](st.BottomUpCheckpoints, s,
-		abi.UIntKey(uint64(CheckpointEpoch(epoch, st.BottomUpCheckPeriod))))
+		sdk.EpochKey(CheckpointEpoch(epoch, st.BottomUpCheckPeriod)))
 	if err != nil {
 		return nil, err
 	}
