@@ -20,7 +20,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufState = []byte{141}
+var lengthBufState = []byte{140}
 
 func (t *State) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -96,12 +96,6 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.AppliedBottomupNonce (uint64) (uint64)
-
-	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.AppliedBottomupNonce)); err != nil {
-		return err
-	}
-
 	// t.AppliedTopdownNonce (uint64) (uint64)
 
 	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.AppliedTopdownNonce)); err != nil {
@@ -139,7 +133,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 13 {
+	if extra != 12 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -273,20 +267,6 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 			return fmt.Errorf("wrong type for uint64 field")
 		}
 		t.BottomupNonce = uint64(extra)
-
-	}
-	// t.AppliedBottomupNonce (uint64) (uint64)
-
-	{
-
-		maj, extra, err = cr.ReadHeader()
-		if err != nil {
-			return err
-		}
-		if maj != cbg.MajUnsignedInt {
-			return fmt.Errorf("wrong type for uint64 field")
-		}
-		t.AppliedBottomupNonce = uint64(extra)
 
 	}
 	// t.AppliedTopdownNonce (uint64) (uint64)
@@ -1192,7 +1172,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) (err error) {
 	return nil
 }
 
-var lengthBufSubnet = []byte{135}
+var lengthBufSubnet = []byte{136}
 
 func (t *Subnet) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -1248,6 +1228,13 @@ func (t *Subnet) MarshalCBOR(w io.Writer) error {
 	if err := t.PrevCheckpoint.MarshalCBOR(cw); err != nil {
 		return err
 	}
+
+	// t.AppliedBottomupNonce (uint64) (uint64)
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.AppliedBottomupNonce)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1270,7 +1257,7 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 7 {
+	if extra != 8 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -1369,6 +1356,20 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 				return xerrors.Errorf("unmarshaling t.PrevCheckpoint pointer: %w", err)
 			}
 		}
+
+	}
+	// t.AppliedBottomupNonce (uint64) (uint64)
+
+	{
+
+		maj, extra, err = cr.ReadHeader()
+		if err != nil {
+			return err
+		}
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
+		}
+		t.AppliedBottomupNonce = uint64(extra)
 
 	}
 	return nil
