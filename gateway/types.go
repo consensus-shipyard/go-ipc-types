@@ -20,13 +20,14 @@ import (
 const ManifestID = "ipc_gateway"
 
 type Subnet struct {
-	ID             sdk.SubnetID
-	Stake          abi.TokenAmount
-	TopDownMsgs    cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
-	Nonce          uint64
-	CircSupply     abi.TokenAmount
-	Status         sdk.Status
-	PrevCheckpoint *BottomUpCheckpoint
+	ID                   sdk.SubnetID
+	Stake                abi.TokenAmount
+	TopDownMsgs          cid.Cid // TCid<TAmt<CrossMsg, CROSSMSG_AMT_BITWIDTH>>,
+	Nonce                uint64
+	CircSupply           abi.TokenAmount
+	Status               sdk.Status
+	PrevCheckpoint       *BottomUpCheckpoint
+	AppliedBottomupNonce uint64
 }
 
 func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {

@@ -15,19 +15,18 @@ import (
 )
 
 type State struct {
-	NetworkName          sdk.SubnetID
-	TotalSubnets         uint64
-	MinStake             abi.TokenAmount
-	Subnets              cid.Cid // TCid<THamt<SubnetID, Subnet>>
-	BottomUpCheckPeriod  abi.ChainEpoch
-	TopDownCheckPeriod   abi.ChainEpoch
-	BottomUpCheckpoints  cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
-	Postbox              cid.Cid // TCid<THamt<Cid, Vec<u8>>>
-	BottomupNonce        uint64
-	AppliedBottomupNonce uint64
-	AppliedTopdownNonce  uint64
-	TopDownCheckVoting   voting.Voting
-	Validators           validator.OnChainValidators
+	NetworkName         sdk.SubnetID
+	TotalSubnets        uint64
+	MinStake            abi.TokenAmount
+	Subnets             cid.Cid // TCid<THamt<SubnetID, Subnet>>
+	BottomUpCheckPeriod abi.ChainEpoch
+	TopDownCheckPeriod  abi.ChainEpoch
+	BottomUpCheckpoints cid.Cid // TCid<THamt<ChainEpoch, Checkpoint>>
+	Postbox             cid.Cid // TCid<THamt<Cid, Vec<u8>>>
+	BottomupNonce       uint64
+	AppliedTopdownNonce uint64
+	TopDownCheckVoting  voting.Voting
+	Validators          validator.OnChainValidators
 }
 
 func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) {
