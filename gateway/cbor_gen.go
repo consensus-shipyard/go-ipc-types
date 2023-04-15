@@ -102,8 +102,8 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.TopDownCheckVoting (voting.Voting) (struct)
-	if err := t.TopDownCheckVoting.MarshalCBOR(cw); err != nil {
+	// t.TopDownCheckpointVoting (voting.Voting) (struct)
+	if err := t.TopDownCheckpointVoting.MarshalCBOR(cw); err != nil {
 		return err
 	}
 
@@ -283,12 +283,12 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		t.AppliedTopdownNonce = uint64(extra)
 
 	}
-	// t.TopDownCheckVoting (voting.Voting) (struct)
+	// t.TopDownCheckpointVoting (voting.Voting) (struct)
 
 	{
 
-		if err := t.TopDownCheckVoting.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.TopDownCheckVoting: %w", err)
+		if err := t.TopDownCheckpointVoting.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.TopDownCheckpointVoting: %w", err)
 		}
 
 	}
