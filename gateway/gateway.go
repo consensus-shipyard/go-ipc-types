@@ -27,6 +27,7 @@ type State struct {
 	AppliedTopdownNonce     uint64
 	TopDownCheckpointVoting voting.Voting
 	Validators              validator.OnChainValidators
+	Initialized             bool
 }
 
 func (st *State) GetSubnet(s adt.Store, id sdk.SubnetID) (*Subnet, bool, error) {

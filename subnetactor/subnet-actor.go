@@ -29,7 +29,6 @@ type State struct {
 	Genesis                    []byte
 	BottomUpCheckPeriod        abi.ChainEpoch
 	TopDownCheckPeriod         abi.ChainEpoch
-	GenesisEpoch               abi.ChainEpoch
 	CommittedCheckpoints       cid.Cid // TCid<THamt<ChainEpoch, BottomUpCheckpoint>>
 	ValidatorSet               *validator.Set
 	MinValidators              uint64

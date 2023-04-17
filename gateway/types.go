@@ -28,6 +28,7 @@ type Subnet struct {
 	Status               sdk.Status
 	PrevCheckpoint       *BottomUpCheckpoint
 	AppliedBottomupNonce uint64
+	GenesisEpoch         abi.ChainEpoch
 }
 
 func (sn *Subnet) GetTopDownMsg(s adt.Store, nonce uint64) (*CrossMsg, bool, error) {
@@ -112,6 +113,10 @@ type FundParams struct {
 type CrossMsgParams struct {
 	CrossMsg    CrossMsg
 	Destination sdk.SubnetID
+}
+
+type InitGenesisEpochParams struct {
+	GenesisEpoch abi.ChainEpoch
 }
 
 type CrossMsgs struct {

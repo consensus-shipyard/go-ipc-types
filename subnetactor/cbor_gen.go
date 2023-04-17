@@ -22,7 +22,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufState = []byte{145}
+var lengthBufState = []byte{144}
 
 func (t *State) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -126,17 +126,6 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 		}
 	}
 
-	// t.GenesisEpoch (abi.ChainEpoch) (int64)
-	if t.GenesisEpoch >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.GenesisEpoch)); err != nil {
-			return err
-		}
-	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.GenesisEpoch-1)); err != nil {
-			return err
-		}
-	}
-
 	// t.CommittedCheckpoints (cid.Cid) (struct)
 
 	if err := cbg.WriteCid(cw, t.CommittedCheckpoints); err != nil {
@@ -186,7 +175,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 17 {
+	if extra != 16 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -357,31 +346,6 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 		t.TopDownCheckPeriod = abi.ChainEpoch(extraI)
-	}
-	// t.GenesisEpoch (abi.ChainEpoch) (int64)
-	{
-		maj, extra, err := cr.ReadHeader()
-		var extraI int64
-		if err != nil {
-			return err
-		}
-		switch maj {
-		case cbg.MajUnsignedInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 positive overflow")
-			}
-		case cbg.MajNegativeInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 negative oveflow")
-			}
-			extraI = -1 - extraI
-		default:
-			return fmt.Errorf("wrong type for int64 field: %d", maj)
-		}
-
-		t.GenesisEpoch = abi.ChainEpoch(extraI)
 	}
 	// t.CommittedCheckpoints (cid.Cid) (struct)
 

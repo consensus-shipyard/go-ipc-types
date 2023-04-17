@@ -24,6 +24,7 @@ func main() {
 		gateway.Subnet{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},
+		gateway.InitGenesisEpochParams{},
 		gateway.CrossMsgParams{},
 		gateway.CrossMsgs{},
 	); err != nil {

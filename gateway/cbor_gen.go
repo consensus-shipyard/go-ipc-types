@@ -20,7 +20,7 @@ var _ = cid.Undef
 var _ = math.E
 var _ = sort.Sort
 
-var lengthBufState = []byte{140}
+var lengthBufState = []byte{141}
 
 func (t *State) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -111,6 +111,11 @@ func (t *State) MarshalCBOR(w io.Writer) error {
 	if err := t.Validators.MarshalCBOR(cw); err != nil {
 		return err
 	}
+
+	// t.Initialized (bool) (bool)
+	if err := cbg.WriteBool(w, t.Initialized); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -133,7 +138,7 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 12 {
+	if extra != 13 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -300,6 +305,23 @@ func (t *State) UnmarshalCBOR(r io.Reader) (err error) {
 			return xerrors.Errorf("unmarshaling t.Validators: %w", err)
 		}
 
+	}
+	// t.Initialized (bool) (bool)
+
+	maj, extra, err = cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	if maj != cbg.MajOther {
+		return fmt.Errorf("booleans must be major type 7")
+	}
+	switch extra {
+	case 20:
+		t.Initialized = false
+	case 21:
+		t.Initialized = true
+	default:
+		return fmt.Errorf("booleans are either major type 7, value 20 or 21 (got %d)", extra)
 	}
 	return nil
 }
@@ -1172,7 +1194,7 @@ func (t *StorableMsg) UnmarshalCBOR(r io.Reader) (err error) {
 	return nil
 }
 
-var lengthBufSubnet = []byte{136}
+var lengthBufSubnet = []byte{137}
 
 func (t *Subnet) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -1235,6 +1257,16 @@ func (t *Subnet) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	if t.GenesisEpoch >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.GenesisEpoch)); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.GenesisEpoch-1)); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -1257,7 +1289,7 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input should be of type array")
 	}
 
-	if extra != 8 {
+	if extra != 9 {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
@@ -1371,6 +1403,31 @@ func (t *Subnet) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 		t.AppliedBottomupNonce = uint64(extra)
 
+	}
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	{
+		maj, extra, err := cr.ReadHeader()
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.GenesisEpoch = abi.ChainEpoch(extraI)
 	}
 	return nil
 }
@@ -1505,6 +1562,84 @@ func (t *FundParams) UnmarshalCBOR(r io.Reader) (err error) {
 			return xerrors.Errorf("unmarshaling t.Value: %w", err)
 		}
 
+	}
+	return nil
+}
+
+var lengthBufInitGenesisEpochParams = []byte{129}
+
+func (t *InitGenesisEpochParams) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufInitGenesisEpochParams); err != nil {
+		return err
+	}
+
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	if t.GenesisEpoch >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.GenesisEpoch)); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.GenesisEpoch-1)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (t *InitGenesisEpochParams) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = InitGenesisEpochParams{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 1 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.GenesisEpoch (abi.ChainEpoch) (int64)
+	{
+		maj, extra, err := cr.ReadHeader()
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.GenesisEpoch = abi.ChainEpoch(extraI)
 	}
 	return nil
 }
