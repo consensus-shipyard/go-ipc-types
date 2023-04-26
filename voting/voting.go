@@ -1,10 +1,13 @@
 package voting
 
 import (
+	"fmt"
+
 	"github.com/consensus-shipyard/go-ipc-types/sdk"
 	"github.com/consensus-shipyard/go-ipc-types/utils"
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
+	"github.com/filecoin-project/go-state-types/builtin"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 	"github.com/ipfs/go-cid"
 	xerrors "golang.org/x/xerrors"
@@ -68,9 +71,9 @@ func (v *Voting) ValidatorHasVoted(s adt.Store, epoch abi.ChainEpoch, validator 
 	if !found {
 		return false, nil
 	}
-	_, found, err = utils.GetOutOfHamt[interface{}](sub.Submitters, s, abi.AddrKey(validator))
+	adtMap, err := adt.AsMap(s, sub.Submitters, builtin.DefaultHamtBitwidth)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get hamt for submitters: %w", err)
 	}
-	return found, nil
+	return adtMap.Has(abi.AddrKey(validator))
 }
