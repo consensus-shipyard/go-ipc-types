@@ -15,8 +15,6 @@ type SubnetID struct {
 	Children []address.Address
 }
 
-var id0, _ = address.NewIDAddress(0)
-
 const (
 	RootPrefix       = "r"
 	SubnetSeparator  = "/"
@@ -180,7 +178,7 @@ func (id SubnetID) Up(curr SubnetID) SubnetID {
 	return UndefSubnetID
 }
 
-// IsBottomUp returns true if the from subnet is above in the hierarchy
+// IsBottomUp returns true if the from subnet is above in the hierarchy.
 func IsBottomUp(from SubnetID, to SubnetID) bool {
 	_, i := to.CommonParent(from)
 	return len(from.Children) > i
