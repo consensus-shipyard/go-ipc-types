@@ -2,63 +2,117 @@ package sdk
 
 import (
 	"path"
-	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/filecoin-project/go-address"
 )
 
 type SubnetID struct {
-	Parent string
-	Actor  address.Address
+	// ChainID of the root network
+	Root uint64
+	// Children up to the current subnet.
+	Children []address.Address
 }
 
 var id0, _ = address.NewIDAddress(0)
 
 const (
-	RootStr          = "/root"
+	RootPrefix       = "r"
 	SubnetSeparator  = "/"
 	UndefStr         = ""
 	IPCAddrSeparator = ":"
 )
 
-// RootSubnet is the ID of the root network
-var RootSubnet = SubnetID{
-	Parent: RootStr,
-	Actor:  id0,
-}
-
 // UndefSubnetID is the undef ID
 var UndefSubnetID = SubnetID{
-	Parent: SubnetSeparator,
-	Actor:  id0,
+	Root:     0,
+	Children: []address.Address{},
 }
 
 func (id SubnetID) Key() string {
 	return id.String()
 }
 
-func NewSubnetIDFromString(addr string) (SubnetID, error) {
-	var out SubnetID
-	if addr == RootSubnet.String() {
-		out = RootSubnet
-		return out, nil
+// Equal checks if two subnet IDs are equal.
+func (id SubnetID) Equal(other SubnetID) bool {
+	if id.Root != other.Root {
+		return false
 	}
-	dir, file := filepath.Split(addr)
-	act, err := address.NewFromString(file)
+	if len(id.Children) != len(other.Children) {
+		return false
+	}
+	for i, c := range id.Children {
+		if c != other.Children[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (id SubnetID) Parent() SubnetID {
+	if len(id.Children) == 0 {
+		return UndefSubnetID
+	}
+	return SubnetID{
+		Root:     id.Root,
+		Children: id.Children[:len(id.Children)-1],
+	}
+}
+
+// Actor returns the subnet actor ID that governs the current subnet
+// or the ID=0 if the current subnet is the root.
+func (id SubnetID) Actor() address.Address {
+	if len(id.Children) == 0 {
+		id, _ := address.NewIDAddress(0)
+		return id
+	}
+	return id.Children[len(id.Children)-1]
+}
+
+// NewRootID creates a new root subnet ID from its chainID.
+func NewRootID(chainID uint64) SubnetID {
+	return SubnetID{
+		Root:     chainID,
+		Children: []address.Address{},
+	}
+}
+
+func NewSubnetIDFromString(addr string) (SubnetID, error) {
+	cs := strings.Split(addr, "/")[1:]
+	id, err := strconv.ParseUint(cs[0][1:], 10, 64)
 	if err != nil {
 		return UndefSubnetID, err
 	}
+
+	children := make([]address.Address, len(cs)-1)
+	if len(cs) > 1 {
+		for i, c := range cs[1:] {
+			children[i], err = address.NewFromString(c)
+			if err != nil {
+				return UndefSubnetID, err
+			}
+		}
+	}
+
 	return SubnetID{
-		Parent: dir[:len(dir)-1], // move trailing `/`
-		Actor:  act,
+		Root:     id,
+		Children: children,
 	}, nil
+
+}
+
+func NewSubnetIDFromRoute(rootID uint64, route []address.Address) SubnetID {
+	return SubnetID{
+		Root:     rootID,
+		Children: route,
+	}
 }
 
 func NewSubnetID(parent SubnetID, subnetAct address.Address) SubnetID {
 	return SubnetID{
-		parent.String(),
-		subnetAct,
+		parent.Root,
+		append(parent.Children, subnetAct),
 	}
 }
 
@@ -68,98 +122,66 @@ func (id SubnetID) Bytes() []byte {
 
 // String returns the id in string form.
 func (id SubnetID) String() string {
-	if id == RootSubnet {
-		if id.Parent != UndefStr {
-			return RootStr
-		}
-		return UndefStr
+	out := SubnetSeparator + RootPrefix + strconv.FormatUint(id.Root, 10) + SubnetSeparator
+	for _, c := range id.Children {
+		out = path.Join(out, c.String())
 	}
-	return filepath.Join(id.Parent, id.Actor.String())
+	return out
 }
 
+// CommonParent computes the common parent of two subnet IDs and
+// returns the number of children in it.
 func (id SubnetID) CommonParent(other SubnetID) (SubnetID, int) {
-	s1 := strings.Split(id.String(), SubnetSeparator)
-	s2 := strings.Split(other.String(), SubnetSeparator)
-	if len(s1) < len(s2) {
-		s1, s2 = s2, s1
-	}
-	out := SubnetSeparator
-	l := 0
-	for i, s := range s2 {
-		if s == s1[i] {
-			out = path.Join(out, s)
-			l = i
-		} else {
-			sn, err := NewSubnetIDFromString(out)
-			if err != nil {
-				return UndefSubnetID, 0
-			}
-			return sn, l
-		}
-	}
-	sn, err := NewSubnetIDFromString(out)
-	if err != nil {
+	if id.Root != other.Root {
 		return UndefSubnetID, 0
 	}
-	return sn, l
+	var i int
+	for i = 0; i < len(id.Children) && i < len(other.Children); i++ {
+		if id.Children[i] != other.Children[i] {
+			break
+		}
+	}
+	return SubnetID{
+		Root:     id.Root,
+		Children: id.Children[:i],
+	}, i
 }
 
+// Down Returns from the current subnet the next subnet down in the path
+// defined by the current subnet and the destination subnet.
 func (id SubnetID) Down(curr SubnetID) SubnetID {
-	s1 := strings.Split(id.String(), SubnetSeparator)
-	s2 := strings.Split(curr.String(), SubnetSeparator)
-	// curr needs to be contained in id
-	if len(s2) >= len(s1) {
+	if len(id.Children) <= len(curr.Children) {
 		return UndefSubnetID
 	}
-	_, l := id.CommonParent(curr)
-	out := SubnetSeparator
-	for i := 0; i <= l+1 && i < len(s1); i++ {
-		if i < len(s2) && s1[i] != s2[i] {
-			// they are not in a common path
-			return UndefSubnetID
+
+	if cp, i := id.CommonParent(curr); !cp.Equal(UndefSubnetID) {
+		return SubnetID{
+			Root:     id.Root,
+			Children: id.Children[:i+1],
 		}
-		out = path.Join(out, s1[i])
 	}
-	sn, err := NewSubnetIDFromString(out)
-	if err != nil {
-		return UndefSubnetID
-	}
-	return sn
+
+	return UndefSubnetID
 }
 
+// Up returns the SubnetID immediately up from the current subnet.
 func (id SubnetID) Up(curr SubnetID) SubnetID {
-	s1 := strings.Split(id.String(), SubnetSeparator)
-	s2 := strings.Split(curr.String(), SubnetSeparator)
-	// curr needs to be contained in id
-	if len(s2) > len(s1) {
+	if len(id.Children) < len(curr.Children) {
 		return UndefSubnetID
 	}
 
-	_, l := id.CommonParent(curr)
-	out := SubnetSeparator
-	for i := 0; i < l; i++ {
-		if i < len(s1) && s1[i] != s2[i] {
-			// they are not in a common path
-			return UndefSubnetID
+	if cp, i := id.CommonParent(curr); !cp.Equal(UndefSubnetID) {
+		return SubnetID{
+			Root:     id.Root,
+			Children: id.Children[:i-1],
 		}
-		out = path.Join(out, s1[i])
 	}
-	sn, err := NewSubnetIDFromString(out)
-	if err != nil {
-		return UndefSubnetID
-	}
-	return sn
+
+	return UndefSubnetID
 }
 
+// IsBottomUp returns true if the from subnet is above in the hierarchy
 func IsBottomUp(from SubnetID, to SubnetID) bool {
-	subnetID, index := from.CommonParent(to)
-	if subnetID == UndefSubnetID {
-		return false
-	}
-
-	a := from.String()
-	components := strings.Split(a, SubnetSeparator)
-	count := len(components) - 1
-	return count > index
-
+	_, i := to.CommonParent(from)
+	return len(from.Children) > i
 }
