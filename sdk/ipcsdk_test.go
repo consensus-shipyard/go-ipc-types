@@ -62,6 +62,23 @@ func TestCborMarshal(t *testing.T) {
 	err = net2.UnmarshalCBOR(&buf)
 	require.NoError(t, err)
 	require.Equal(t, net1, net2)
+
+	// Marshal a root subnet
+	err = root.MarshalCBOR(&buf)
+	require.NoError(t, err)
+	net2 = sdk.SubnetID{}
+	err = net2.UnmarshalCBOR(&buf)
+	require.NoError(t, err)
+	require.True(t, root.Equal(net2))
+}
+
+func TestChainID(t *testing.T) {
+	addr1, err := address.NewIDAddress(1001)
+	require.NoError(t, err)
+	root := sdk.NewRootID(123)
+	net1 := sdk.NewSubnetID(root, addr1)
+	require.Equal(t, uint64(2185257692569594473), net1.ChainID())
+	require.Equal(t, uint64(123), root.ChainID())
 }
 
 func TestHAddress(t *testing.T) {

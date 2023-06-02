@@ -1,6 +1,8 @@
 package sdk
 
 import (
+	"bytes"
+	"hash/fnv"
 	"path"
 	"strconv"
 	"strings"
@@ -20,6 +22,10 @@ const (
 	SubnetSeparator  = "/"
 	UndefStr         = ""
 	IPCAddrSeparator = ":"
+
+	// MaxChainID is the maximum chain ID value
+	// possible.
+	MaxChainID = 0xffffffffffffffff
 )
 
 // UndefSubnetID is the undef ID
@@ -29,7 +35,8 @@ var UndefSubnetID = SubnetID{
 }
 
 func (id SubnetID) Key() string {
-	return id.String()
+	b, _ := id.Bytes()
+	return string(b)
 }
 
 // Equal checks if two subnet IDs are equal.
@@ -46,6 +53,21 @@ func (id SubnetID) Equal(other SubnetID) bool {
 		}
 	}
 	return true
+}
+
+// IsRoot Returns true if the current subnet is the root subnet
+func (id SubnetID) IsRoot() bool {
+	return len(id.Children) == 0
+}
+
+func (id SubnetID) ChainID() uint64 {
+	if id.IsRoot() {
+		return id.Root
+	}
+
+	h := fnv.New64a()
+	h.Write([]byte(id.String()))
+	return h.Sum64() % MaxChainID
 }
 
 func (id SubnetID) Parent() SubnetID {
@@ -114,13 +136,17 @@ func NewSubnetID(parent SubnetID, subnetAct address.Address) SubnetID {
 	}
 }
 
-func (id SubnetID) Bytes() []byte {
-	return []byte(id.String())
+func (id SubnetID) Bytes() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := id.MarshalCBOR(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // String returns the id in string form.
 func (id SubnetID) String() string {
-	out := SubnetSeparator + RootPrefix + strconv.FormatUint(id.Root, 10) + SubnetSeparator
+	out := SubnetSeparator + RootPrefix + strconv.FormatUint(id.Root, 10)
 	for _, c := range id.Children {
 		out = path.Join(out, c.String())
 	}
