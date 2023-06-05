@@ -66,7 +66,7 @@ func (id SubnetID) ChainID() uint64 {
 	}
 
 	h := fnv.New64a()
-	h.Write([]byte(id.String()))
+	h.Write([]byte(id.String())) // nolint
 	return h.Sum64() % MaxChainID
 }
 
