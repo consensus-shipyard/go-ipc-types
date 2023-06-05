@@ -25,7 +25,7 @@ const (
 
 	// MaxChainID is the maximum chain ID value
 	// possible.
-	MaxChainID = 0xffffffffffffffff
+	MaxChainID = 4503599627370476
 )
 
 // UndefSubnetID is the undef ID

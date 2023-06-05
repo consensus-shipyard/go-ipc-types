@@ -77,7 +77,7 @@ func TestChainID(t *testing.T) {
 	require.NoError(t, err)
 	root := sdk.NewRootID(123)
 	net1 := sdk.NewSubnetID(root, addr1)
-	require.Equal(t, uint64(2185257692569594473), net1.ChainID())
+	require.Equal(t, uint64(1011873294913613), net1.ChainID())
 	require.Equal(t, uint64(123), root.ChainID())
 }
 
