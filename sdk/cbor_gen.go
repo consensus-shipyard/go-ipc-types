@@ -8,6 +8,7 @@ import (
 	"math"
 	"sort"
 
+	address "github.com/filecoin-project/go-address"
 	cid "github.com/ipfs/go-cid"
 	cbg "github.com/whyrusleeping/cbor-gen"
 	xerrors "golang.org/x/xerrors"
@@ -102,21 +103,24 @@ func (t *SubnetID) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Parent (string) (string)
-	if len(t.Parent) > cbg.MaxLength {
-		return xerrors.Errorf("Value in field t.Parent was too long")
-	}
+	// t.Root (uint64) (uint64)
 
-	if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(t.Parent))); err != nil {
-		return err
-	}
-	if _, err := io.WriteString(w, string(t.Parent)); err != nil {
+	if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.Root)); err != nil {
 		return err
 	}
 
-	// t.Actor (address.Address) (struct)
-	if err := t.Actor.MarshalCBOR(cw); err != nil {
+	// t.Children ([]address.Address) (slice)
+	if len(t.Children) > cbg.MaxLength {
+		return xerrors.Errorf("Slice value in field t.Children was too long")
+	}
+
+	if err := cw.WriteMajorTypeHeader(cbg.MajArray, uint64(len(t.Children))); err != nil {
 		return err
+	}
+	for _, v := range t.Children {
+		if err := v.MarshalCBOR(cw); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -144,24 +148,48 @@ func (t *SubnetID) UnmarshalCBOR(r io.Reader) (err error) {
 		return fmt.Errorf("cbor input had wrong number of fields")
 	}
 
-	// t.Parent (string) (string)
+	// t.Root (uint64) (uint64)
 
 	{
-		sval, err := cbg.ReadString(cr)
+
+		maj, extra, err = cr.ReadHeader()
 		if err != nil {
 			return err
 		}
+		if maj != cbg.MajUnsignedInt {
+			return fmt.Errorf("wrong type for uint64 field")
+		}
+		t.Root = uint64(extra)
 
-		t.Parent = string(sval)
 	}
-	// t.Actor (address.Address) (struct)
+	// t.Children ([]address.Address) (slice)
 
-	{
+	maj, extra, err = cr.ReadHeader()
+	if err != nil {
+		return err
+	}
 
-		if err := t.Actor.UnmarshalCBOR(cr); err != nil {
-			return xerrors.Errorf("unmarshaling t.Actor: %w", err)
+	if extra > cbg.MaxLength {
+		return fmt.Errorf("t.Children: array too large (%d)", extra)
+	}
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("expected cbor array")
+	}
+
+	if extra > 0 {
+		t.Children = make([]address.Address, extra)
+	}
+
+	for i := 0; i < int(extra); i++ {
+
+		var v address.Address
+		if err := v.UnmarshalCBOR(cr); err != nil {
+			return err
 		}
 
+		t.Children[i] = v
 	}
+
 	return nil
 }
