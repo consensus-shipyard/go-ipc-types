@@ -14,7 +14,7 @@ const ManifestID = "ipc_subnet_actor"
 type ConstructParams struct {
 	Parent              sdk.SubnetID
 	Name                string
-	IPCGatewayAddr      uint64
+	IPCGatewayAddr      address.Address
 	Consensus           ConsensusType
 	MinValidatorStake   abi.TokenAmount
 	MinValidators       uint64
