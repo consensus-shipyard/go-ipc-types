@@ -24,6 +24,8 @@ func main() {
 		gateway.Subnet{},
 		gateway.CrossMsg{},
 		gateway.FundParams{},
+		gateway.ReleaseParams{},
+		gateway.AmountParams{},
 		gateway.InitGenesisEpochParams{},
 		gateway.CrossMsgParams{},
 		gateway.CrossMsgs{},

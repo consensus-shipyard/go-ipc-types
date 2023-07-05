@@ -1510,7 +1510,7 @@ func (t *CrossMsg) UnmarshalCBOR(r io.Reader) (err error) {
 	return nil
 }
 
-var lengthBufFundParams = []byte{129}
+var lengthBufFundParams = []byte{130}
 
 func (t *FundParams) MarshalCBOR(w io.Writer) error {
 	if t == nil {
@@ -1524,8 +1524,13 @@ func (t *FundParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.Value (big.Int) (struct)
-	if err := t.Value.MarshalCBOR(cw); err != nil {
+	// t.Subnet (sdk.SubnetID) (struct)
+	if err := t.Subnet.MarshalCBOR(cw); err != nil {
+		return err
+	}
+
+	// t.To (address.Address) (struct)
+	if err := t.To.MarshalCBOR(cw); err != nil {
 		return err
 	}
 	return nil
@@ -1533,6 +1538,127 @@ func (t *FundParams) MarshalCBOR(w io.Writer) error {
 
 func (t *FundParams) UnmarshalCBOR(r io.Reader) (err error) {
 	*t = FundParams{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 2 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.Subnet (sdk.SubnetID) (struct)
+
+	{
+
+		if err := t.Subnet.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.Subnet: %w", err)
+		}
+
+	}
+	// t.To (address.Address) (struct)
+
+	{
+
+		if err := t.To.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.To: %w", err)
+		}
+
+	}
+	return nil
+}
+
+var lengthBufReleaseParams = []byte{129}
+
+func (t *ReleaseParams) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufReleaseParams); err != nil {
+		return err
+	}
+
+	// t.To (address.Address) (struct)
+	if err := t.To.MarshalCBOR(cw); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *ReleaseParams) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = ReleaseParams{}
+
+	cr := cbg.NewCborReader(r)
+
+	maj, extra, err := cr.ReadHeader()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err == io.EOF {
+			err = io.ErrUnexpectedEOF
+		}
+	}()
+
+	if maj != cbg.MajArray {
+		return fmt.Errorf("cbor input should be of type array")
+	}
+
+	if extra != 1 {
+		return fmt.Errorf("cbor input had wrong number of fields")
+	}
+
+	// t.To (address.Address) (struct)
+
+	{
+
+		if err := t.To.UnmarshalCBOR(cr); err != nil {
+			return xerrors.Errorf("unmarshaling t.To: %w", err)
+		}
+
+	}
+	return nil
+}
+
+var lengthBufAmountParams = []byte{129}
+
+func (t *AmountParams) MarshalCBOR(w io.Writer) error {
+	if t == nil {
+		_, err := w.Write(cbg.CborNull)
+		return err
+	}
+
+	cw := cbg.NewCborWriter(w)
+
+	if _, err := cw.Write(lengthBufAmountParams); err != nil {
+		return err
+	}
+
+	// t.Value (big.Int) (struct)
+	if err := t.Value.MarshalCBOR(cw); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t *AmountParams) UnmarshalCBOR(r io.Reader) (err error) {
+	*t = AmountParams{}
 
 	cr := cbg.NewCborReader(r)
 
