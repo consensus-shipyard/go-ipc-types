@@ -8,6 +8,7 @@ import (
 	mh "github.com/multiformats/go-multihash"
 	xerrors "golang.org/x/xerrors"
 
+	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	"github.com/filecoin-project/specs-actors/v7/actors/util/adt"
 
@@ -106,8 +107,17 @@ type CrossMsg struct {
 	Wrapped bool
 }
 
-type FundParams struct {
+type AmountParams struct {
 	Value abi.TokenAmount
+}
+
+type FundParams struct {
+	Subnet sdk.SubnetID
+	To     address.Address
+}
+
+type ReleaseParams struct {
+	To address.Address
 }
 
 type CrossMsgParams struct {

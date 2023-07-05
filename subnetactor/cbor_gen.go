@@ -469,17 +469,6 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		return err
 	}
 
-	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
-	if t.TopDownCheckPeriod >= 0 {
-		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.TopDownCheckPeriod)); err != nil {
-			return err
-		}
-	} else {
-		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.TopDownCheckPeriod-1)); err != nil {
-			return err
-		}
-	}
-
 	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
 	if t.BottomUpCheckPeriod >= 0 {
 		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.BottomUpCheckPeriod)); err != nil {
@@ -487,6 +476,17 @@ func (t *ConstructParams) MarshalCBOR(w io.Writer) error {
 		}
 	} else {
 		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.BottomUpCheckPeriod-1)); err != nil {
+			return err
+		}
+	}
+
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
+	if t.TopDownCheckPeriod >= 0 {
+		if err := cw.WriteMajorTypeHeader(cbg.MajUnsignedInt, uint64(t.TopDownCheckPeriod)); err != nil {
+			return err
+		}
+	} else {
+		if err := cw.WriteMajorTypeHeader(cbg.MajNegativeInt, uint64(-t.TopDownCheckPeriod-1)); err != nil {
 			return err
 		}
 	}
@@ -594,31 +594,6 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 		t.MinValidators = uint64(extra)
 
 	}
-	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
-	{
-		maj, extra, err := cr.ReadHeader()
-		var extraI int64
-		if err != nil {
-			return err
-		}
-		switch maj {
-		case cbg.MajUnsignedInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 positive overflow")
-			}
-		case cbg.MajNegativeInt:
-			extraI = int64(extra)
-			if extraI < 0 {
-				return fmt.Errorf("int64 negative oveflow")
-			}
-			extraI = -1 - extraI
-		default:
-			return fmt.Errorf("wrong type for int64 field: %d", maj)
-		}
-
-		t.TopDownCheckPeriod = abi.ChainEpoch(extraI)
-	}
 	// t.BottomUpCheckPeriod (abi.ChainEpoch) (int64)
 	{
 		maj, extra, err := cr.ReadHeader()
@@ -643,6 +618,31 @@ func (t *ConstructParams) UnmarshalCBOR(r io.Reader) (err error) {
 		}
 
 		t.BottomUpCheckPeriod = abi.ChainEpoch(extraI)
+	}
+	// t.TopDownCheckPeriod (abi.ChainEpoch) (int64)
+	{
+		maj, extra, err := cr.ReadHeader()
+		var extraI int64
+		if err != nil {
+			return err
+		}
+		switch maj {
+		case cbg.MajUnsignedInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 positive overflow")
+			}
+		case cbg.MajNegativeInt:
+			extraI = int64(extra)
+			if extraI < 0 {
+				return fmt.Errorf("int64 negative oveflow")
+			}
+			extraI = -1 - extraI
+		default:
+			return fmt.Errorf("wrong type for int64 field: %d", maj)
+		}
+
+		t.TopDownCheckPeriod = abi.ChainEpoch(extraI)
 	}
 	// t.Genesis ([]uint8) (slice)
 

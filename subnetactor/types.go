@@ -18,8 +18,8 @@ type ConstructParams struct {
 	Consensus           ConsensusType
 	MinValidatorStake   abi.TokenAmount
 	MinValidators       uint64
-	TopDownCheckPeriod  abi.ChainEpoch
 	BottomUpCheckPeriod abi.ChainEpoch
+	TopDownCheckPeriod  abi.ChainEpoch
 	Genesis             []byte
 }
 
@@ -36,10 +36,5 @@ type Votes struct {
 type ConsensusType uint64
 
 const (
-	Delegated ConsensusType = iota
-	PoW
-	Tendermint
-	Mir
-	FilecoinEC
-	Dummy
+	Mir ConsensusType = iota
 )
