@@ -68,11 +68,6 @@ type Validator struct {
 	Weight  *abi.TokenAmount `json:"weight,omitempty"`
 }
 
-func NewValidator(a addr.Address, netAddr string) *Validator {
-	w := abi.NewTokenAmount(0)
-	return &Validator{Addr: a, NetAddr: netAddr, Weight: &w}
-}
-
 func NewValidatorWithWeight(a addr.Address, netAddr string, w *big.Int) *Validator {
 	return &Validator{Addr: a, NetAddr: netAddr, Weight: w}
 }
@@ -97,7 +92,7 @@ func (v *Validator) Bytes() ([]byte, error) {
 }
 
 func (v *Validator) String() string {
-	return fmt.Sprintf("%s@%s", v.Addr.String(), v.NetAddr)
+	return fmt.Sprintf("%s@%s:%s", v.Addr.String(), v.NetAddr, v.Weight)
 }
 
 func SplitAndTrimEmpty(s, sep, cutset string) []string {
