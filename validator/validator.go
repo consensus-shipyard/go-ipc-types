@@ -28,12 +28,15 @@ func NewValidatorFromString(s string) (*Validator, error) {
 	idAndWeight := parts[0]
 	netAddr := parts[1]
 	parts = strings.Split(idAndWeight, ":")
-	if len(parts) > 2 {
+	if len(parts) != 2 {
 		return nil, fmt.Errorf("weight or ID are incorrect")
 	}
 
 	id := parts[0]
 	if len(parts) == 2 {
+		if parts[1] == "" {
+			return nil, fmt.Errorf("empty weight")
+		}
 		n, err := big.FromString(parts[1])
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse weight: %w", err)
@@ -113,7 +116,7 @@ func SplitAndTrimEmpty(s, sep, cutset string) []string {
 	return nonEmptyStrings
 }
 
-// OnchainValidators information stored in the gateway actor
+// OnChainValidators information stored in the gateway actor
 type OnChainValidators struct {
 	Validators  Set
 	TotalWeight abi.TokenAmount
