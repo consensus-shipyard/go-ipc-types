@@ -13,9 +13,9 @@ import (
 )
 
 func TestHashesAreEqualForEqualMemberships(t *testing.T) {
-	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
-	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 
 	vs1 := NewValidatorSet(0, []*Validator{v1, v2})
@@ -45,6 +45,12 @@ var validatorStrTests = []validatorStrTest{
 		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
 		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 		"1",
+		true,
+	},
+	{
+		"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy",
+		"/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
+		"999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999",
 		true,
 	},
 	{
@@ -97,8 +103,23 @@ var incorrectValidatorStrings = []string{
 	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy::/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:8",
+	"t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 	"8:/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ",
 	"8:@",
+}
+
+func TestValidatorInvalidStringErr(t *testing.T) {
+	_, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "weight or ID are incorrect")
+
+	_, err = NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "empty weight")
+
+	_, err = NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:test@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to parse weight")
 }
 
 func TestValidatorFromString(t *testing.T) {
@@ -128,7 +149,7 @@ func TestValidatorSetFromEnv(t *testing.T) {
 	addr := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy"
 	netAddr := "/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
 
-	err := os.Setenv("TEST_VALIDATORS_FROM_ENV", fmt.Sprintf("%v;%v@%v", nonce, addr, netAddr))
+	err := os.Setenv("TEST_VALIDATORS_FROM_ENV", fmt.Sprintf("%v;%v:10@%v", nonce, addr, netAddr))
 	require.NoError(t, err)
 	defer func() {
 		err := os.Unsetenv("TEST_VALIDATORS_FROM_ENV")
@@ -149,11 +170,11 @@ func TestValidatorSetFromEnv(t *testing.T) {
 }
 
 func TestMembership(t *testing.T) {
-	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
-	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
-	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:3@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 
 	v := []*Validator{v1, v2, v3}
@@ -169,11 +190,11 @@ func TestValidatorSetFromFile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
-	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
-	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:10000000000000000000000000000000000000000000000000000000000@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 
 	vs1 := NewValidatorSet(0, []*Validator{v1, v2, v3})
@@ -193,16 +214,21 @@ func TestValidatorSetFromFile(t *testing.T) {
 }
 
 func TestValidatorSetFromString(t *testing.T) {
-	s1 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
-	s2 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
-	s3 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	s1 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	s2 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	s3 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:3@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
 
 	v1, err := NewValidatorFromString(s1)
 	require.NoError(t, err)
+	require.Equal(t, "1", v1.Weight.String())
+
 	v2, err := NewValidatorFromString(s2)
 	require.NoError(t, err)
+	require.Equal(t, "2", v2.Weight.String())
+
 	v3, err := NewValidatorFromString(s3)
 	require.NoError(t, err)
+	require.Equal(t, "3", v3.Weight.String())
 
 	vs1 := NewValidatorSet(3, []*Validator{v1, v2, v3})
 	require.Equal(t, 3, vs1.Size())
@@ -214,8 +240,8 @@ func TestValidatorSetFromString(t *testing.T) {
 }
 
 func TestValidatorSetFromJson(t *testing.T) {
-	s1 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
-	s2 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	s1 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
+	s2 := "t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ"
 
 	v1, err := NewValidatorFromString(s1)
 	require.NoError(t, err)
@@ -239,7 +265,7 @@ func TestAddValidatorToFile(t *testing.T) {
 		require.NoError(t, err)
 	})
 
-	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v1, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:1@/ip4/127.0.0.1/tcp/10000/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 	err = AddValidatorToFile(fileName, v1)
 	require.NoError(t, err)
@@ -249,12 +275,12 @@ func TestAddValidatorToFile(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, true, vs1.Equal(vs))
 
-	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v2, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:2@/ip4/127.0.0.1/tcp/10001/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 	err = AddValidatorToFile(fileName, v2)
 	require.NoError(t, err)
 
-	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
+	v3, err := NewValidatorFromString("t1wpixt5mihkj75lfhrnaa6v56n27epvlgwparujy:3@/ip4/127.0.0.1/tcp/10002/p2p/12D3KooWJhKBXvytYgPCAaiRtiNLJNSFG5jreKDu2jiVpJetzvVJ")
 	require.NoError(t, err)
 	err = AddValidatorToFile(fileName, v3)
 	require.NoError(t, err)
